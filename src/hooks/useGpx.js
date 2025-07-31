@@ -23,25 +23,36 @@ const useGpx = () => {
         try {
           const parsedData = parseGpx(e.target.result);
           const newGpx = {
-            id: Date.now() + file.name, // ユニークなIDを生成
+            id: Date.now() + file.name,
             fileName: file.name,
+            isVisible: true, // 表示状態プロパティを追加
             ...parsedData
           };
           setGpxData(prevData => [...prevData, newGpx]);
         } catch (error) {
           console.error("GPXファイルの解析に失敗しました:", error);
-          // ToDo: ユーザーにエラーを通知する
         }
       };
       reader.onerror = () => {
         console.error("ファイルの読み込みに失敗しました。");
-        // ToDo: ユーザーにエラーを通知する
       };
       reader.readAsText(file);
     });
   };
 
-  return { gpxData, addGpxFiles };
+  /**
+   * GPXデータの表示/非表示を切り替える
+   * @param {string} id - 対象のGPXデータのID
+   */
+  const toggleGpxVisibility = (id) => {
+    setGpxData(prevData =>
+      prevData.map(data =>
+        data.id === id ? { ...data, isVisible: !data.isVisible } : data
+      )
+    );
+  };
+
+  return { gpxData, addGpxFiles, toggleGpxVisibility };
 };
 
 export default useGpx;

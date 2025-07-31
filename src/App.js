@@ -9,7 +9,7 @@ import './App.css';
 
 function App() {
   const { isMobile, isSidebarOpen, toggleSidebar } = useUI();
-  const { gpxData, addGpxFiles } = useGpx();
+  const { gpxData, addGpxFiles, toggleGpxVisibility } = useGpx();
 
   useEffect(() => {
     if (isMobile) return;
@@ -40,6 +40,8 @@ function App() {
     ${isMobile && isSidebarOpen ? 'open' : ''}
   `;
 
+  const visibleGpxData = gpxData.filter(data => data.isVisible);
+
   return (
     <div className="app-container">
       {isMobile && (
@@ -48,15 +50,19 @@ function App() {
         </button>
       )}
       <div id="sidebar" className={sidebarClasses}>
-        <Sidebar gpxData={gpxData} onFileAdd={addGpxFiles} />
+        <Sidebar
+          gpxData={gpxData}
+          onFileAdd={addGpxFiles}
+          onToggleVisibility={toggleGpxVisibility}
+        />
       </div>
       {!isMobile && <div className="gutter gutter-horizontal"></div>}
       <div id="main-area" className={isMobile ? 'main-area-mobile' : 'split'}>
         <div id="map-area" className="split-vertical">
-          <Map gpxData={gpxData} />
+          <Map gpxData={visibleGpxData} />
         </div>
         <div id="graph-area" className="split-vertical">
-          <ElevationGraph gpxData={gpxData} />
+          <ElevationGraph gpxData={visibleGpxData} />
         </div>
       </div>
     </div>

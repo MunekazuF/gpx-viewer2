@@ -1,7 +1,7 @@
 import React from 'react';
 import './Sidebar.css';
 
-const Sidebar = ({ gpxData, onFileAdd }) => {
+const Sidebar = ({ gpxData, onFileAdd, onToggleVisibility }) => {
   const handleFileChange = (e) => {
     if (e.target.files) {
       onFileAdd(e.target.files);
@@ -9,7 +9,14 @@ const Sidebar = ({ gpxData, onFileAdd }) => {
     }
   };
 
-  // gpxDataがundefinedの場合に備えてデフォルト値を設定
+  const formatDate = (date) => {
+    if (!date) return '';
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}/${m}/${d}`;
+  };
+
   const filesToRender = gpxData || [];
 
   return (
@@ -30,8 +37,14 @@ const Sidebar = ({ gpxData, onFileAdd }) => {
       <div className="file-list">
         {filesToRender.map((data) => (
           <div key={data.id} className="file-item">
-            {/* ToDo: 仕様書通りのフォーマット `yyyy/mm/dd ファイル名` にする */}
-            {data.fileName}
+            <input
+              type="checkbox"
+              checked={data.isVisible}
+              onChange={() => onToggleVisibility(data.id)}
+            />
+            <span className="file-name">
+              {formatDate(data.time)} {data.name}
+            </span>
           </div>
         ))}
       </div>
