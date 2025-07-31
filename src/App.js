@@ -56,7 +56,7 @@ function App() {
           <Map gpxData={gpxData} />
         </div>
         <div id="graph-area" className="split-vertical">
-          <ElevationGraph />
+          <ElevationGraph gpxData={gpxData} />
         </div>
       </div>
     </div>

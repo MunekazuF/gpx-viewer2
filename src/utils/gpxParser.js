@@ -1,27 +1,47 @@
+import { calculateDistance } from './distanceCalculator';
+import { filterGpxPoints } from './gpxFilter';
+
 /**
  * GPXファイルのテキストを解析し、必要な情報を抽出する
  * @param {string} gpxText - GPXファイルのテキストコンテンツ
- * @returns {{name: string, time: Date | null, points: Array<{lat: number, lng: number}>}}
+ * @returns {{name: string, time: Date | null, points: Array<{lat: number, lng: number, ele: number | null, distance: number}>}}
  */
 export const parseGpx = (gpxText) => {
   const parser = new DOMParser();
   const xmlDoc = parser.parseFromString(gpxText, "text/xml");
 
-  // GPX名を取得
   const name = xmlDoc.getElementsByTagName("name")[0]?.textContent || "無題のトラック";
-
-  // 日付を取得
   const timeStr = xmlDoc.getElementsByTagName("time")[0]?.textContent;
   const time = timeStr ? new Date(timeStr) : null;
 
-  // 軌跡のポイントを取得
+  // 1. GPXからポイントを抽出
   const trackPoints = xmlDoc.getElementsByTagName("trkpt");
-  const points = Array.from(trackPoints).map(pt => {
+  let initialPoints = Array.from(trackPoints).map(pt => {
+    const eleTag = pt.getElementsByTagName("ele")[0];
     return {
       lat: parseFloat(pt.getAttribute("lat")),
       lng: parseFloat(pt.getAttribute("lon")),
+      ele: eleTag ? parseFloat(eleTag.textContent) : null,
     };
   });
 
-  return { name, time, points };
+  // 2. 異常なポイントを除外
+  const filteredPoints = filterGpxPoints(initialPoints);
+
+  // 3. フィルタリング後のポイントで累積距離を再計算
+  let totalDistance = 0;
+  const finalPoints = [];
+  for (let i = 0; i < filteredPoints.length; i++) {
+    const currentPoint = filteredPoints[i];
+    if (i > 0) {
+      const prevPoint = finalPoints[i - 1];
+      totalDistance += calculateDistance(prevPoint, currentPoint);
+    }
+    finalPoints.push({
+      ...currentPoint,
+      distance: totalDistance,
+    });
+  }
+
+  return { name, time, points: finalPoints };
 };
