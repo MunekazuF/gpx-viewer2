@@ -2,14 +2,17 @@ import React, { useEffect } from 'react';
 import Split from 'split.js';
 import Sidebar from './Sidebar';
 import ElevationGraph from './ElevationGraph';
+import Map from './components/Map';
 import useUI from './hooks/useUI';
+import useGpx from './hooks/useGpx';
 import './App.css';
 
 function App() {
   const { isMobile, isSidebarOpen, toggleSidebar } = useUI();
+  const { gpxData, addGpxFiles } = useGpx();
 
   useEffect(() => {
-    if (isMobile) return; // スマホ表示ではSplit.jsを初期化しない
+    if (isMobile) return;
 
     const horizontalSplit = Split(['#sidebar', '#main-area'], {
       sizes: [25, 75],
@@ -27,11 +30,10 @@ function App() {
     });
 
     return () => {
-      // コンポーネントのクリーンアップ時にSplitインスタンスを破棄
       if (horizontalSplit) horizontalSplit.destroy();
       if (verticalSplit) verticalSplit.destroy();
     };
-  }, [isMobile]); // isMobileが変わるたびにeffectを再実行
+  }, [isMobile]);
 
   const sidebarClasses = `
     ${isMobile ? 'sidebar-mobile' : 'split'}
@@ -46,12 +48,12 @@ function App() {
         </button>
       )}
       <div id="sidebar" className={sidebarClasses}>
-        <Sidebar />
+        <Sidebar gpxData={gpxData} onFileAdd={addGpxFiles} />
       </div>
       {!isMobile && <div className="gutter gutter-horizontal"></div>}
       <div id="main-area" className={isMobile ? 'main-area-mobile' : 'split'}>
         <div id="map-area" className="split-vertical">
-          <p>Map Area</p>
+          <Map gpxData={gpxData} />
         </div>
         <div id="graph-area" className="split-vertical">
           <ElevationGraph />
