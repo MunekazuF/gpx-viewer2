@@ -1,67 +1,79 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { parseGpx } from '../utils/gpxParser';
+import { saveGpxData, getAllGpxMetadata, getGpxDataById } from '../utils/db';
 
 const useGpx = () => {
-  const [gpxData, setGpxData] = useState([]);
-  const [focusedGpxId, setFocusedGpxId] = useState(null);
-  const [filter, setFilter] = useState({ keyword: '' }); // フィルター条件
+  const [gpxTracks, setGpxTracks] = useState([]);
+  const [focusedGpxId, _setFocusedGpxId] = useState(null);
+  const [focusedGpxData, setFocusedGpxData] = useState(null); // フォーカスされたトラックの完全なデータ
+  const [filter, setFilter] = useState({ keyword: '' });
 
-  /**
-   * 新しいGPXファイルを追加し、解析する
-   * @param {FileList} files - ファイル選択ダイアログから受け取ったファイルのリスト
-   */
+  useEffect(() => {
+    const loadMetadata = async () => {
+      const metadata = await getAllGpxMetadata();
+      const tracks = metadata.map(meta => ({ ...meta, isVisible: false, points: null }));
+      setGpxTracks(tracks);
+    };
+    loadMetadata();
+  }, []);
+
   const addGpxFiles = (files) => {
-    const newFiles = Array.from(files).filter(file => {
-      return !gpxData.some(existing => existing.fileName === file.name);
-    });
-
+    const newFiles = Array.from(files).filter(file => !gpxTracks.some(track => track.fileName === file.name));
     if (newFiles.length === 0) return;
 
     newFiles.forEach(file => {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         try {
           const parsedData = parseGpx(e.target.result);
-          const newGpx = {
-            id: Date.now() + file.name,
-            fileName: file.name,
-            isVisible: true,
-            ...parsedData
-          };
-          setGpxData(prevData => [...prevData, newGpx]);
-        } catch (error) { console.error("GPXファイルの解析に失敗しました:", error); }
+          const newTrack = { id: Date.now() + file.name, fileName: file.name, ...parsedData };
+          await saveGpxData(newTrack);
+          const { points, ...metadata } = newTrack;
+          setGpxTracks(prev => [...prev, { ...metadata, isVisible: false, points: null }]);
+        } catch (error) { console.error("GPX解析/保存エラー:", error); }
       };
-      reader.onerror = () => { console.error("ファイルの読み込みに失敗しました。"); };
       reader.readAsText(file);
     });
   };
 
-  /**
-   * GPXデータの表示/非表示を切り替える
-   * @param {string} id - 対象のGPXデータのID
-   */
-  const toggleGpxVisibility = (id) => {
-    setGpxData(prevData =>
-      prevData.map(data =>
-        data.id === id ? { ...data, isVisible: !data.isVisible } : data
-      )
-    );
+  const toggleGpxVisibility = async (id) => {
+    const targetTrack = gpxTracks.find(track => track.id === id);
+    if (!targetTrack) return;
+
+    const newVisibility = !targetTrack.isVisible;
+
+    if (newVisibility) {
+      const fullData = await getGpxDataById(id);
+      setGpxTracks(prev => prev.map(track => track.id === id ? { ...fullData, isVisible: true } : track));
+    } else {
+      setGpxTracks(prev => prev.map(track => track.id === id ? { ...track, isVisible: false, points: null } : track));
+    }
   };
 
-  // フィルター条件に基づいて表示するデータをメモ化
-  const filteredGpxData = useMemo(() => {
-    return gpxData.filter(data => {
-      if (filter.keyword && !data.name.toLowerCase().includes(filter.keyword.toLowerCase())) {
+  // フォーカスするGPXのIDを設定する新しい関数
+  const setFocusedGpxId = async (id) => {
+    if (id) {
+      const fullData = await getGpxDataById(id);
+      setFocusedGpxData(fullData);
+    } else {
+      setFocusedGpxData(null);
+    }
+    _setFocusedGpxId(id);
+  };
+
+  const filteredGpxTracks = useMemo(() => {
+    return gpxTracks.filter(track => {
+      if (filter.keyword && !track.name.toLowerCase().includes(filter.keyword.toLowerCase())) {
         return false;
       }
-      // ToDo: 他のフィルター条件（日付、地図範囲）をここに追加
       return true;
     });
-  }, [gpxData, filter]);
+  }, [gpxTracks, filter]);
 
   return {
-    allGpxData: gpxData, // 全データ
-    filteredGpxData,      // フィルタリング後のデータ
+    gpxTracks: filteredGpxTracks,
+    visibleGpxTracks: gpxTracks.filter(t => t.isVisible && t.points),
+    focusedGpxData, // 新しく返す
     addGpxFiles,
     toggleGpxVisibility,
     focusedGpxId,

@@ -1,7 +1,7 @@
 import React from 'react';
 import './Sidebar.css';
 
-const Sidebar = ({ gpxData, onFileAdd, onToggleVisibility, onFocusGpx, focusedGpxId, onToggleFilterModal }) => {
+const Sidebar = ({ gpxTracks, onFileAdd, onToggleVisibility, onFocusGpx, focusedGpxId, onToggleFilterModal }) => {
   const handleFileChange = (e) => {
     if (e.target.files) {
       onFileAdd(e.target.files);
@@ -17,7 +17,7 @@ const Sidebar = ({ gpxData, onFileAdd, onToggleVisibility, onFocusGpx, focusedGp
     return `${y}/${m}/${d}`;
   };
 
-  const filesToRender = gpxData || [];
+  const filesToRender = gpxTracks || [];
 
   return (
     <div className="sidebar-container">

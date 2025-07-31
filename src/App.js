@@ -4,7 +4,7 @@ import Sidebar from './Sidebar';
 import ElevationGraph from './ElevationGraph';
 import Map from './components/Map';
 import GpxInfoOverlay from './GpxInfoOverlay';
-import FilterModal from './FilterModal'; // FilterModalをインポート
+import FilterModal from './FilterModal';
 import useUI from './hooks/useUI';
 import useGpx from './hooks/useGpx';
 import './App.css';
@@ -12,14 +12,15 @@ import './App.css';
 function App() {
   const { isMobile, isSidebarOpen, toggleSidebar, isFilterModalOpen, toggleFilterModal } = useUI();
   const {
-    filteredGpxData,
+    gpxTracks,
+    visibleGpxTracks,
+    focusedGpxData, // useGpxから直接受け取る
     addGpxFiles,
     toggleGpxVisibility,
     focusedGpxId,
     setFocusedGpxId,
     filter,
     setFilter,
-    allGpxData
   } = useGpx();
 
   useEffect(() => {
@@ -51,9 +52,6 @@ function App() {
     ${isMobile && isSidebarOpen ? 'open' : ''}
   `;
 
-  const visibleGpxData = filteredGpxData.filter(data => data.isVisible);
-  const focusedGpxData = allGpxData.find(data => data.id === focusedGpxId);
-
   return (
     <div className="app-container">
       {isFilterModalOpen && (
@@ -70,7 +68,7 @@ function App() {
       )}
       <div id="sidebar" className={sidebarClasses}>
         <Sidebar
-          gpxData={filteredGpxData} // フィルタリング後のデータを渡す
+          gpxTracks={gpxTracks}
           onFileAdd={addGpxFiles}
           onToggleVisibility={toggleGpxVisibility}
           onFocusGpx={setFocusedGpxId}
@@ -82,10 +80,10 @@ function App() {
       <div id="main-area" className={isMobile ? 'main-area-mobile' : 'split'}>
         <GpxInfoOverlay gpx={focusedGpxData} />
         <div id="map-area" className="split-vertical">
-          <Map gpxData={visibleGpxData} focusedGpxId={focusedGpxId} />
+          <Map gpxData={visibleGpxTracks} focusedGpxId={focusedGpxId} />
         </div>
         <div id="graph-area" className="split-vertical">
-          <ElevationGraph gpxData={visibleGpxData} />
+          <ElevationGraph gpxData={visibleGpxTracks} />
         </div>
       </div>
     </div>
