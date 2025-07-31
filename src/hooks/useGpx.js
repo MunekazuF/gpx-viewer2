@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { parseGpx } from '../utils/gpxParser';
 
 const useGpx = () => {
   const [gpxData, setGpxData] = useState([]);
-  const [focusedGpxId, setFocusedGpxId] = useState(null); // フォーカスされているGPXのID
+  const [focusedGpxId, setFocusedGpxId] = useState(null);
+  const [filter, setFilter] = useState({ keyword: '' }); // フィルター条件
 
   /**
    * 新しいGPXファイルを追加し、解析する
@@ -14,9 +15,7 @@ const useGpx = () => {
       return !gpxData.some(existing => existing.fileName === file.name);
     });
 
-    if (newFiles.length === 0) {
-      return;
-    }
+    if (newFiles.length === 0) return;
 
     newFiles.forEach(file => {
       const reader = new FileReader();
@@ -30,13 +29,9 @@ const useGpx = () => {
             ...parsedData
           };
           setGpxData(prevData => [...prevData, newGpx]);
-        } catch (error) {
-          console.error("GPXファイルの解析に失敗しました:", error);
-        }
+        } catch (error) { console.error("GPXファイルの解析に失敗しました:", error); }
       };
-      reader.onerror = () => {
-        console.error("ファイルの読み込みに失敗しました。");
-      };
+      reader.onerror = () => { console.error("ファイルの読み込みに失敗しました。"); };
       reader.readAsText(file);
     });
   };
@@ -53,7 +48,27 @@ const useGpx = () => {
     );
   };
 
-  return { gpxData, addGpxFiles, toggleGpxVisibility, focusedGpxId, setFocusedGpxId };
+  // フィルター条件に基づいて表示するデータをメモ化
+  const filteredGpxData = useMemo(() => {
+    return gpxData.filter(data => {
+      if (filter.keyword && !data.name.toLowerCase().includes(filter.keyword.toLowerCase())) {
+        return false;
+      }
+      // ToDo: 他のフィルター条件（日付、地図範囲）をここに追加
+      return true;
+    });
+  }, [gpxData, filter]);
+
+  return {
+    allGpxData: gpxData, // 全データ
+    filteredGpxData,      // フィルタリング後のデータ
+    addGpxFiles,
+    toggleGpxVisibility,
+    focusedGpxId,
+    setFocusedGpxId,
+    filter,
+    setFilter,
+  };
 };
 
 export default useGpx;

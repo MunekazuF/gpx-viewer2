@@ -3,14 +3,24 @@ import Split from 'split.js';
 import Sidebar from './Sidebar';
 import ElevationGraph from './ElevationGraph';
 import Map from './components/Map';
-import GpxInfoOverlay from './GpxInfoOverlay'; // GpxInfoOverlayをインポート
+import GpxInfoOverlay from './GpxInfoOverlay';
+import FilterModal from './FilterModal'; // FilterModalをインポート
 import useUI from './hooks/useUI';
 import useGpx from './hooks/useGpx';
 import './App.css';
 
 function App() {
-  const { isMobile, isSidebarOpen, toggleSidebar } = useUI();
-  const { gpxData, addGpxFiles, toggleGpxVisibility, focusedGpxId, setFocusedGpxId } = useGpx();
+  const { isMobile, isSidebarOpen, toggleSidebar, isFilterModalOpen, toggleFilterModal } = useUI();
+  const {
+    filteredGpxData,
+    addGpxFiles,
+    toggleGpxVisibility,
+    focusedGpxId,
+    setFocusedGpxId,
+    filter,
+    setFilter,
+    allGpxData
+  } = useGpx();
 
   useEffect(() => {
     if (isMobile) return;
@@ -41,11 +51,18 @@ function App() {
     ${isMobile && isSidebarOpen ? 'open' : ''}
   `;
 
-  const visibleGpxData = gpxData.filter(data => data.isVisible);
-  const focusedGpxData = gpxData.find(data => data.id === focusedGpxId);
+  const visibleGpxData = filteredGpxData.filter(data => data.isVisible);
+  const focusedGpxData = allGpxData.find(data => data.id === focusedGpxId);
 
   return (
     <div className="app-container">
+      {isFilterModalOpen && (
+        <FilterModal
+          currentFilter={filter}
+          onApplyFilter={setFilter}
+          onClose={toggleFilterModal}
+        />
+      )}
       {isMobile && (
         <button className="hamburger-menu" onClick={toggleSidebar}>
           {isSidebarOpen ? <>&times;</> : <>&equiv;</>}
@@ -53,11 +70,12 @@ function App() {
       )}
       <div id="sidebar" className={sidebarClasses}>
         <Sidebar
-          gpxData={gpxData}
+          gpxData={filteredGpxData} // フィルタリング後のデータを渡す
           onFileAdd={addGpxFiles}
           onToggleVisibility={toggleGpxVisibility}
           onFocusGpx={setFocusedGpxId}
           focusedGpxId={focusedGpxId}
+          onToggleFilterModal={toggleFilterModal}
         />
       </div>
       {!isMobile && <div className="gutter gutter-horizontal"></div>}

@@ -8,9 +8,12 @@
 .sidebar-header {
   padding: 10px;
   border-bottom: 1px solid #ddd;
+  display: flex;
+  gap: 10px; /* ボタン間のスペース */
 }
 
-.file-upload-label {
+.file-upload-label, .filter-button {
+  flex: 1; /* 幅を均等に分ける */
   display: block;
   padding: 10px 15px;
   background-color: #007bff;
@@ -19,9 +22,11 @@
   border-radius: 5px;
   cursor: pointer;
   font-weight: bold;
+  border: none;
+  font-size: 14px;
 }
 
-.file-upload-label:hover {
+.file-upload-label:hover, .filter-button:hover {
   background-color: #0056b3;
 }
 

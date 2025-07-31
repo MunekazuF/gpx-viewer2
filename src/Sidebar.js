@@ -1,7 +1,7 @@
 import React from 'react';
 import './Sidebar.css';
 
-const Sidebar = ({ gpxData, onFileAdd, onToggleVisibility, onFocusGpx, focusedGpxId }) => {
+const Sidebar = ({ gpxData, onFileAdd, onToggleVisibility, onFocusGpx, focusedGpxId, onToggleFilterModal }) => {
   const handleFileChange = (e) => {
     if (e.target.files) {
       onFileAdd(e.target.files);
@@ -33,6 +33,9 @@ const Sidebar = ({ gpxData, onFileAdd, onToggleVisibility, onFocusGpx, focusedGp
           onChange={handleFileChange}
           style={{ display: 'none' }}
         />
+        <button onClick={onToggleFilterModal} className="filter-button">
+          フィルター
+        </button>
       </div>
       <div className="file-list">
         {filesToRender.map((data) => (
@@ -45,7 +48,7 @@ const Sidebar = ({ gpxData, onFileAdd, onToggleVisibility, onFocusGpx, focusedGp
               type="checkbox"
               checked={data.isVisible}
               onChange={(e) => {
-                e.stopPropagation(); // 親要素のonClickが発火しないようにする
+                e.stopPropagation();
                 onToggleVisibility(data.id);
               }}
             />

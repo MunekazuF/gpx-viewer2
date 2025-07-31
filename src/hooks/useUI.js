@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 const useUI = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [isFilterModalOpen, setFilterModalOpen] = useState(false); // フィルターモーダルの表示状態
 
   useEffect(() => {
     const handleResize = () => {
@@ -19,7 +20,11 @@ const useUI = () => {
     }
   };
 
-  return { isMobile, isSidebarOpen, toggleSidebar };
+  const toggleFilterModal = () => {
+    setFilterModalOpen(!isFilterModalOpen);
+  };
+
+  return { isMobile, isSidebarOpen, toggleSidebar, isFilterModalOpen, toggleFilterModal };
 };
 
 export default useUI;
