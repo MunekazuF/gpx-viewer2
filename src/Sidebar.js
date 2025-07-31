@@ -1,7 +1,7 @@
 import React from 'react';
 import './Sidebar.css';
 
-const Sidebar = ({ gpxData, onFileAdd, onToggleVisibility }) => {
+const Sidebar = ({ gpxData, onFileAdd, onToggleVisibility, onFocusGpx, focusedGpxId }) => {
   const handleFileChange = (e) => {
     if (e.target.files) {
       onFileAdd(e.target.files);
@@ -36,11 +36,18 @@ const Sidebar = ({ gpxData, onFileAdd, onToggleVisibility }) => {
       </div>
       <div className="file-list">
         {filesToRender.map((data) => (
-          <div key={data.id} className="file-item">
+          <div
+            key={data.id}
+            className={`file-item ${data.id === focusedGpxId ? 'focused' : ''}`}
+            onClick={() => onFocusGpx(data.id)}
+          >
             <input
               type="checkbox"
               checked={data.isVisible}
-              onChange={() => onToggleVisibility(data.id)}
+              onChange={(e) => {
+                e.stopPropagation(); // 親要素のonClickが発火しないようにする
+                onToggleVisibility(data.id);
+              }}
             />
             <span className="file-name">
               {formatDate(data.time)} {data.name}

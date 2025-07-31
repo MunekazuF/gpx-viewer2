@@ -3,6 +3,7 @@ import { parseGpx } from '../utils/gpxParser';
 
 const useGpx = () => {
   const [gpxData, setGpxData] = useState([]);
+  const [focusedGpxId, setFocusedGpxId] = useState(null); // フォーカスされているGPXのID
 
   /**
    * 新しいGPXファイルを追加し、解析する
@@ -25,7 +26,7 @@ const useGpx = () => {
           const newGpx = {
             id: Date.now() + file.name,
             fileName: file.name,
-            isVisible: true, // 表示状態プロパティを追加
+            isVisible: true,
             ...parsedData
           };
           setGpxData(prevData => [...prevData, newGpx]);
@@ -52,7 +53,7 @@ const useGpx = () => {
     );
   };
 
-  return { gpxData, addGpxFiles, toggleGpxVisibility };
+  return { gpxData, addGpxFiles, toggleGpxVisibility, focusedGpxId, setFocusedGpxId };
 };
 
 export default useGpx;

@@ -3,13 +3,14 @@ import Split from 'split.js';
 import Sidebar from './Sidebar';
 import ElevationGraph from './ElevationGraph';
 import Map from './components/Map';
+import GpxInfoOverlay from './GpxInfoOverlay'; // GpxInfoOverlayをインポート
 import useUI from './hooks/useUI';
 import useGpx from './hooks/useGpx';
 import './App.css';
 
 function App() {
   const { isMobile, isSidebarOpen, toggleSidebar } = useUI();
-  const { gpxData, addGpxFiles, toggleGpxVisibility } = useGpx();
+  const { gpxData, addGpxFiles, toggleGpxVisibility, focusedGpxId, setFocusedGpxId } = useGpx();
 
   useEffect(() => {
     if (isMobile) return;
@@ -41,6 +42,7 @@ function App() {
   `;
 
   const visibleGpxData = gpxData.filter(data => data.isVisible);
+  const focusedGpxData = gpxData.find(data => data.id === focusedGpxId);
 
   return (
     <div className="app-container">
@@ -54,12 +56,15 @@ function App() {
           gpxData={gpxData}
           onFileAdd={addGpxFiles}
           onToggleVisibility={toggleGpxVisibility}
+          onFocusGpx={setFocusedGpxId}
+          focusedGpxId={focusedGpxId}
         />
       </div>
       {!isMobile && <div className="gutter gutter-horizontal"></div>}
       <div id="main-area" className={isMobile ? 'main-area-mobile' : 'split'}>
+        <GpxInfoOverlay gpx={focusedGpxData} />
         <div id="map-area" className="split-vertical">
-          <Map gpxData={visibleGpxData} />
+          <Map gpxData={visibleGpxData} focusedGpxId={focusedGpxId} />
         </div>
         <div id="graph-area" className="split-vertical">
           <ElevationGraph gpxData={visibleGpxData} />

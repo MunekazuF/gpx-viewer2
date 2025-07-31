@@ -4,7 +4,7 @@ import { filterGpxPoints } from './gpxFilter';
 /**
  * GPXファイルのテキストを解析し、必要な情報を抽出する
  * @param {string} gpxText - GPXファイルのテキストコンテンツ
- * @returns {{name: string, time: Date | null, points: Array<{lat: number, lng: number, ele: number | null, distance: number}>}}
+ * @returns {{name: string, time: Date | null, points: Array<{lat: number, lng: number, ele: number | null, time: Date | null, distance: number}>}}
  */
 export const parseGpx = (gpxText) => {
   const parser = new DOMParser();
@@ -18,10 +18,12 @@ export const parseGpx = (gpxText) => {
   const trackPoints = xmlDoc.getElementsByTagName("trkpt");
   let initialPoints = Array.from(trackPoints).map(pt => {
     const eleTag = pt.getElementsByTagName("ele")[0];
+    const timeTag = pt.getElementsByTagName("time")[0];
     return {
       lat: parseFloat(pt.getAttribute("lat")),
       lng: parseFloat(pt.getAttribute("lon")),
       ele: eleTag ? parseFloat(eleTag.textContent) : null,
+      time: timeTag ? new Date(timeTag.textContent) : null,
     };
   });
 
