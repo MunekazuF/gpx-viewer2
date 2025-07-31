@@ -1,0 +1,124 @@
+/* --- 基本スタイル --- */
+body, html, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: sans-serif;
+  overflow: hidden;
+}
+
+.app-container {
+  position: relative; /* ハンバーガーメニューの配置基準 */
+  height: 100vh;
+}
+
+/* --- ワイドスクリーン用スタイル (Split.js) --- */
+.split {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  overflow: hidden;
+}
+
+#main-area.split {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.split-vertical {
+  overflow: hidden;
+  position: relative; /* 子要素の配置基準 */
+}
+
+#sidebar {
+  background-color: #f0f0f0;
+}
+
+#map-area {
+  background-color: #e0e0e0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+#graph-area {
+  background-color: #d0d0d0;
+}
+
+.gutter {
+  background-color: #ccc;
+  background-repeat: no-repeat;
+  background-position: 50%;
+}
+.gutter.gutter-horizontal {
+  cursor: col-resize;
+}
+.gutter.gutter-vertical {
+  cursor: row-resize;
+}
+
+.sidebar, .elevation-graph {
+  padding: 10px;
+  box-sizing: border-box;
+  height: 100%;
+}
+
+
+/* --- ナロースクリーン用スタイル (レスポンシブ) --- */
+.hamburger-menu {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 1001; /* サイドバーより手前に表示 */
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 20px;
+}
+
+.sidebar-mobile {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 300px;
+  background-color: #f0f0f0;
+  z-index: 1000;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease-in-out;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+}
+
+.sidebar-mobile.open {
+  transform: translateX(0);
+}
+
+#main-area-mobile {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* メディアクエリ */
+@media (min-width: 769px) {
+  .app-container {
+    display: flex;
+  }
+  .hamburger-menu, .sidebar-mobile, #main-area-mobile {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .split, .gutter {
+    display: none;
+  }
+  .app-container {
+    display: block;
+  }
+}
