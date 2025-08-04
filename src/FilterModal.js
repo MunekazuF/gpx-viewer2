@@ -1,17 +1,32 @@
 import React, { useState } from 'react';
 import './FilterModal.css';
 
-const FilterModal = ({ currentFilter, onApplyFilter, onClose }) => {
+const FilterModal = ({ currentFilter, onApplyFilter, onClose, mapBounds }) => {
   const [keyword, setKeyword] = useState(currentFilter.keyword || '');
+  const [startDate, setStartDate] = useState(currentFilter.startDate || '');
+  const [endDate, setEndDate] = useState(currentFilter.endDate || '');
+  const [useMapBounds, setUseMapBounds] = useState(currentFilter.useMapBounds || false);
 
   const handleApply = () => {
-    onApplyFilter({ keyword });
+    let boundsToApply = null;
+    if (useMapBounds && mapBounds && mapBounds._southWest && mapBounds._northEast) {
+      boundsToApply = {
+        south: mapBounds._southWest.lat,
+        west: mapBounds._southWest.lng,
+        north: mapBounds._northEast.lat,
+        east: mapBounds._northEast.lng,
+      };
+    }
+    onApplyFilter({ keyword, startDate, endDate, useMapBounds, mapBounds: boundsToApply });
     onClose();
   };
 
   const handleClear = () => {
     setKeyword('');
-    onApplyFilter({ keyword: '' });
+    setStartDate('');
+    setEndDate('');
+    setUseMapBounds(false);
+    onApplyFilter({ keyword: '', startDate: '', endDate: '', useMapBounds: false, mapBounds: null });
     onClose();
   };
 
@@ -33,7 +48,34 @@ const FilterModal = ({ currentFilter, onApplyFilter, onClose }) => {
               placeholder="GPX名で検索"
             />
           </div>
-          {/* ToDo: 他のフィルター（日付範囲など）をここに追加 */}
+          <div className="form-group">
+            <label>日付範囲</label>
+            <div className="date-range-picker">
+              <input
+                type="date"
+                id="startDate"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+              <span>-</span>
+              <input
+                type="date"
+                id="endDate"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={useMapBounds}
+                onChange={(e) => setUseMapBounds(e.target.checked)}
+              />
+              地図の範囲を適用
+            </label>
+          </div>
         </div>
         <div className="modal-footer">
           <button onClick={handleClear} className="clear-button">クリア</button>

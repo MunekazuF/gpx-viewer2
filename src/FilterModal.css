@@ -85,3 +85,24 @@
 .clear-button:hover {
   background-color: #5a6268;
 }
+
+.date-range-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.date-range-picker input {
+  flex: 1;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: auto;
+  margin-right: 10px;
+}

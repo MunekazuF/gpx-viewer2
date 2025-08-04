@@ -1,12 +1,13 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { parseGpx } from '../utils/gpxParser';
-import { saveGpxData, getAllGpxMetadata, getGpxDataById } from '../utils/db';
+import { saveGpxData, getAllGpxMetadata, getGpxDataById, deleteGpxDataByIds } from '../utils/db';
+import { filterGpxFiles } from '../utils/gpxFilter';
 
-const useGpx = () => {
-  const [gpxTracks, setGpxTracks] = useState([]);
+const useGpx = (mapBounds) => {
+  const [gpxTracks, setGpxTracks] = useState([]); // 全てのGPXメタデータと表示状態
   const [focusedGpxId, _setFocusedGpxId] = useState(null);
   const [focusedGpxData, setFocusedGpxData] = useState(null); // フォーカスされたトラックの完全なデータ
-  const [filter, setFilter] = useState({ keyword: '' });
+  const [currentFilter, setCurrentFilter] = useState({ keyword: '', startDate: '', endDate: '', useMapBounds: false, mapBounds: null });
 
   useEffect(() => {
     const loadMetadata = async () => {
@@ -50,7 +51,6 @@ const useGpx = () => {
     }
   };
 
-  // フォーカスするGPXのIDを設定する新しい関数
   const setFocusedGpxId = async (id) => {
     if (id) {
       const fullData = await getGpxDataById(id);
@@ -61,25 +61,60 @@ const useGpx = () => {
     _setFocusedGpxId(id);
   };
 
-  const filteredGpxTracks = useMemo(() => {
-    return gpxTracks.filter(track => {
-      if (filter.keyword && !track.name.toLowerCase().includes(filter.keyword.toLowerCase())) {
-        return false;
+  const resetSelection = () => {
+    setGpxTracks(prev => prev.map(track => ({ ...track, isVisible: false, points: null })));
+  };
+
+  const deleteSelectedGpx = async () => {
+    const selectedIds = gpxTracks.filter(track => track.isVisible).map(track => track.id);
+    if (selectedIds.length === 0) return;
+
+    await deleteGpxDataByIds(selectedIds);
+    setGpxTracks(prev => prev.filter(track => !selectedIds.includes(track.id)));
+  };
+
+  const applyFilter = useCallback(async (filters) => {
+    setCurrentFilter(filters);
+
+    const allTracksFullData = await Promise.all(
+      gpxTracks.map(track => getGpxDataById(track.id))
+    );
+
+    const filtered = filterGpxFiles(allTracksFullData, filters);
+    const filteredIds = filtered.map(track => track.id);
+
+    const newGpxTracks = gpxTracks.map(track => {
+      const isFiltered = filteredIds.includes(track.id);
+      const shouldBeVisible = isFiltered && filteredIds.indexOf(track.id) < 20;
+
+      if (shouldBeVisible) {
+        const fullData = filtered.find(t => t.id === track.id);
+        return { ...fullData, isVisible: true };
+      } else {
+        const { points, ...metadata } = track;
+        return { ...metadata, isVisible: false, points: null };
       }
-      return true;
     });
-  }, [gpxTracks, filter]);
+
+    setGpxTracks(newGpxTracks);
+  }, [gpxTracks]);
+
+  const visibleGpxTracks = useMemo(() => {
+    return gpxTracks.filter(t => t.isVisible && t.points);
+  }, [gpxTracks]);
 
   return {
-    gpxTracks: filteredGpxTracks,
-    visibleGpxTracks: gpxTracks.filter(t => t.isVisible && t.points),
-    focusedGpxData, // 新しく返す
+    gpxTracks: gpxTracks, // 全てのトラックを返す
+    visibleGpxTracks,
+    focusedGpxData,
     addGpxFiles,
     toggleGpxVisibility,
     focusedGpxId,
     setFocusedGpxId,
-    filter,
-    setFilter,
+    filter: currentFilter, // フィルターの状態を返す
+    setFilter: applyFilter, // フィルター適用関数を公開
+    resetSelection,
+    deleteSelectedGpx,
   };
 };
 

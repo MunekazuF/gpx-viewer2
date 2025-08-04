@@ -34,8 +34,11 @@ export const saveGpxData = async (gpxData) => {
 export const getAllGpxMetadata = async () => {
   const db = await initDB();
   const allData = await db.getAll(STORE_NAME);
-  // pointsプロパティを除外して返す
-  return allData.map(({ points, ...metadata }) => metadata);
+  // pointsプロパティのみを除外し、他のメタデータ（startPoint, endPointを含む）は保持する
+  return allData.map(item => {
+    const { points, ...metadata } = item;
+    return metadata;
+  });
 };
 
 /**
@@ -48,4 +51,13 @@ export const getGpxDataById = async (id) => {
   return db.get(STORE_NAME, id);
 };
 
-// ToDo: GPXデータを削除する関数を後で追加
+/**
+ * 指定したIDのGPXデータを削除する
+ * @param {Array<string>} ids - 削除するGPXデータのIDの配列
+ */
+export const deleteGpxDataByIds = async (ids) => {
+  const db = await initDB();
+  const tx = db.transaction(STORE_NAME, 'readwrite');
+  await Promise.all(ids.map(id => tx.store.delete(id)));
+  await tx.done;
+};

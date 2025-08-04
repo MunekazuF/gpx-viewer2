@@ -49,3 +49,71 @@ export const filterGpxPoints = (points) => {
 
   return elevationFiltered;
 };
+
+/**
+ * 指定された緯度経度ポイントが地図の境界内にあるかチェックする
+ * @param {{lat: number, lng: number}} point - チェックするポイント
+ * @param {{south: number, west: number, north: number, east: number}} bounds - 地図の境界
+ * @returns {boolean} - 境界内にある場合はtrue
+ */
+const isPointInBounds = (point, bounds) => {
+  if (!point || !bounds) return false;
+  return (
+    point.lat >= bounds.south &&
+    point.lat <= bounds.north &&
+    point.lng >= bounds.west &&
+    point.lng <= bounds.east
+  );
+};
+
+/**
+ * GPXファイルリストをフィルター条件に基づいて絞り込む
+ * @param {Array<object>} gpxFiles - GPXファイルのメタデータ配列
+ * @param {object} filters - フィルター条件
+ * @param {string} [filters.keyword] - ファイル名キーワード
+ * @param {string} [filters.startDate] - 開始日 (YYYY-MM-DD)
+ * @param {string} [filters.endDate] - 終了日 (YYYY-MM-DD)
+ * @param {boolean} [filters.useMapBounds] - 地図の範囲を使用するか
+ * @param {{south: number, west: number, north: number, east: number}} [filters.mapBounds] - 地図の境界
+ * @returns {Array<object>} フィルターされたGPXファイルの配列
+ */
+export const filterGpxFiles = (gpxFiles, filters) => {
+  const { keyword, startDate, endDate, useMapBounds, mapBounds } = filters;
+
+  return gpxFiles.filter(gpx => {
+    // キーワードフィルタ
+    if (keyword && !gpx.name.toLowerCase().includes(keyword.toLowerCase())) {
+      return false;
+    }
+
+    // 日付範囲フィルタ
+    if (gpx.time) {
+      const gpxDate = new Date(gpx.time);
+      if (startDate) {
+        const startFilterDate = new Date(startDate);
+        if (gpxDate < startFilterDate) {
+          return false;
+        }
+      }
+      if (endDate) {
+        const endFilterDate = new Date(endDate);
+        // 日付の比較は日付の終わりまでを含むように調整
+        endFilterDate.setDate(endFilterDate.getDate() + 1); // 翌日の00:00:00までを範囲に含める
+        if (gpxDate >= endFilterDate) {
+          return false;
+        }
+      }
+    }
+
+    // 地図範囲フィルタ
+    if (useMapBounds && mapBounds) {
+      const startInBounds = isPointInBounds(gpx.startPoint, mapBounds);
+      const endInBounds = isPointInBounds(gpx.endPoint, mapBounds);
+      if (!startInBounds && !endInBounds) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+};

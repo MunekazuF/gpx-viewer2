@@ -45,5 +45,8 @@ export const parseGpx = (gpxText) => {
     });
   }
 
-  return { name, time, points: finalPoints };
+  const startPoint = finalPoints.length > 0 ? { lat: finalPoints[0].lat, lng: finalPoints[0].lng } : null;
+  const endPoint = finalPoints.length > 0 ? { lat: finalPoints[finalPoints.length - 1].lat, lng: finalPoints[finalPoints.length - 1].lng } : null;
+
+  return { name, time, points: finalPoints, startPoint, endPoint };
 };

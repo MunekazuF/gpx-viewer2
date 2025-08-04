@@ -3,6 +3,7 @@
   flex-direction: column;
   height: 100%;
   background-color: #f7f7f7;
+  position: relative; /* For drag overlay positioning */
 }
 
 .sidebar-header {
@@ -12,7 +13,7 @@
   gap: 10px; /* ボタン間のスペース */
 }
 
-.file-upload-label, .filter-button {
+.file-upload-label, .filter-button, .reset-button, .delete-button {
   flex: 1; /* 幅を均等に分ける */
   display: block;
   padding: 10px 15px;
@@ -28,6 +29,14 @@
 
 .file-upload-label:hover, .filter-button:hover {
   background-color: #0056b3;
+}
+
+.delete-button {
+  background-color: #dc3545;
+}
+
+.delete-button:hover {
+  background-color: #c82333;
 }
 
 .file-list {
@@ -52,4 +61,34 @@
 
 .file-item input[type="checkbox"] {
   margin-right: 8px; /* チェックボックスとファイル名の間隔 */
+}
+
+.sidebar-container.dragging {
+  border: 2px dashed #007bff;
+}
+
+.drag-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 123, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none; /* これが重要 */
+}
+
+.drag-overlay p {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #007bff;
+}
+
+.sidebar-footer {
+  padding: 10px;
+  border-top: 1px solid #ddd;
+  display: flex;
+  gap: 10px;
 }

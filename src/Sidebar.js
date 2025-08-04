@@ -1,11 +1,40 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './Sidebar.css';
 
-const Sidebar = ({ gpxTracks, onFileAdd, onToggleVisibility, onFocusGpx, focusedGpxId, onToggleFilterModal }) => {
+const Sidebar = ({ gpxTracks, onFileAdd, onToggleVisibility, onFocusGpx, focusedGpxId, onToggleFilterModal, onResetSelection, onDeleteSelected }) => {
+  const [isDragging, setIsDragging] = useState(false);
+
   const handleFileChange = (e) => {
     if (e.target.files) {
       onFileAdd(e.target.files);
       e.target.value = '';
+    }
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      onFileAdd(e.dataTransfer.files);
     }
   };
 
@@ -20,7 +49,13 @@ const Sidebar = ({ gpxTracks, onFileAdd, onToggleVisibility, onFocusGpx, focused
   const filesToRender = gpxTracks || [];
 
   return (
-    <div className="sidebar-container">
+    <div
+      className={`sidebar-container ${isDragging ? 'dragging' : ''}`}
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+    >
       <div className="sidebar-header">
         <label htmlFor="file-upload" className="file-upload-label">
           アップロード
@@ -58,6 +93,23 @@ const Sidebar = ({ gpxTracks, onFileAdd, onToggleVisibility, onFocusGpx, focused
           </div>
         ))}
       </div>
+      <div className="sidebar-footer">
+        <button onClick={onResetSelection} className="reset-button">
+          リセット
+        </button>
+        <button onClick={() => {
+          if (window.confirm('選択したファイルを削除しますか？')) {
+            onDeleteSelected();
+          }
+        }} className="delete-button">
+          削除
+        </button>
+      </div>
+      {isDragging && (
+        <div className="drag-overlay">
+          <p>ここにファイルをドロップ</p>
+        </div>
+      )}
     </div>
   );
 };

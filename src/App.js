@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Split from 'split.js';
 import Sidebar from './Sidebar';
 import ElevationGraph from './ElevationGraph';
@@ -10,6 +10,7 @@ import useGpx from './hooks/useGpx';
 import './App.css';
 
 function App() {
+  const [mapBounds, setMapBounds] = useState(null);
   const { isMobile, isSidebarOpen, toggleSidebar, isFilterModalOpen, toggleFilterModal } = useUI();
   const {
     gpxTracks,
@@ -21,7 +22,23 @@ function App() {
     setFocusedGpxId,
     filter,
     setFilter,
-  } = useGpx();
+    resetSelection,
+    deleteSelectedGpx,
+  } = useGpx(mapBounds);
+
+  useEffect(() => {
+    const preventDefault = (e) => {
+      e.preventDefault();
+    };
+
+    window.addEventListener('dragover', preventDefault, false);
+    window.addEventListener('drop', preventDefault, false);
+
+    return () => {
+      window.removeEventListener('dragover', preventDefault, false);
+      window.removeEventListener('drop', preventDefault, false);
+    };
+  }, []);
 
   useEffect(() => {
     if (isMobile) return;
@@ -59,6 +76,7 @@ function App() {
           currentFilter={filter}
           onApplyFilter={setFilter}
           onClose={toggleFilterModal}
+          mapBounds={mapBounds}
         />
       )}
       {isMobile && (
@@ -74,13 +92,16 @@ function App() {
           onFocusGpx={setFocusedGpxId}
           focusedGpxId={focusedGpxId}
           onToggleFilterModal={toggleFilterModal}
+          onResetSelection={resetSelection}
+          onDeleteSelected={deleteSelectedGpx}
+          mapBounds={mapBounds}
         />
       </div>
       {!isMobile && <div className="gutter gutter-horizontal"></div>}
       <div id="main-area" className={isMobile ? 'main-area-mobile' : 'split'}>
         <GpxInfoOverlay gpx={focusedGpxData} />
         <div id="map-area" className="split-vertical">
-          <Map gpxData={visibleGpxTracks} focusedGpxId={focusedGpxId} />
+          <Map gpxData={visibleGpxTracks} focusedGpxData={focusedGpxData} onBoundsChange={setMapBounds} />
         </div>
         <div id="graph-area" className="split-vertical">
           <ElevationGraph gpxData={visibleGpxTracks} />
