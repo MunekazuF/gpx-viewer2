@@ -22,7 +22,7 @@ ChartJS.register(
   Legend
 );
 
-// ===== カスタムプラグイン: クロスヘアと補間マーカー =====
+// (中略: crosshairPluginは変更なし)
 const crosshairPlugin = {
   id: 'crosshair',
 
@@ -130,11 +130,10 @@ const crosshairPlugin = {
 
 ChartJS.register(crosshairPlugin);
 
+
 const ElevationGraph = ({ gpxData, onPointHover, focusedGpxData }) => {
-  // useMemoを使って、gpxDataが変更されたときだけ最長トラックを再計算する
   const longestTrack = useMemo(() => {
     if (!gpxData || gpxData.length === 0) return null;
-    
     return gpxData.reduce((longest, current) => {
       const longestDist = longest.points[longest.points.length - 1]?.distance || 0;
       const currentDist = current.points[current.points.length - 1]?.distance || 0;
@@ -143,11 +142,10 @@ const ElevationGraph = ({ gpxData, onPointHover, focusedGpxData }) => {
   }, [gpxData]);
 
   const data = {
-    // 最長トラックを基準にX軸のラベルを生成
     labels: longestTrack?.points.map(p => p.distance.toFixed(2)) || [],
     datasets: (gpxData || []).map((gpx, index) => ({
       label: gpx.name,
-      data: gpx.points.map(p => ({ x: p.distance, y: p.ele })), // データをオブジェクト形式に変更
+      data: gpx.points.map(p => ({ x: p.distance, y: p.ele })),
       borderColor: gpx.color || `hsl(${index * 137.5}, 70%, 50%)`,
       backgroundColor: gpx.color ? `${gpx.color.slice(0, -1)}, 0.5)` : `hsla(${index * 137.5}, 70%, 50%, 0.5)`,
       tension: 0.1,

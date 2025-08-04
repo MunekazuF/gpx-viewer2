@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Split from 'split.js';
 import Sidebar from './Sidebar';
 import ElevationGraph from './ElevationGraph';
@@ -13,7 +13,7 @@ import './App.css';
 function App() {
   const [hoveredPoint, setHoveredPoint] = useState(null);
   const { isMobile, isSidebarOpen, toggleSidebar, isFilterModalOpen, toggleFilterModal, mobileView, setMobileView } = useUI();
-  const { mapBounds, onBoundsChange } = useMap(); // シンプルなフックに変更
+  const { mapBounds, onBoundsChange } = useMap();
   const {
     gpxTracks,
     visibleGpxTracks,
@@ -28,14 +28,21 @@ function App() {
     deleteSelectedGpx,
   } = useGpx(mapBounds);
 
-  useEffect(() => {
-    const preventDefault = (e) => {
-      e.preventDefault();
-    };
+  const [graphSizeMode, setGraphSizeMode] = useState('normal');
+  const verticalSplitRef = useRef(null);
 
+  const toggleGraphSizeMode = useCallback(() => {
+    setGraphSizeMode(currentMode => {
+      if (currentMode === 'normal') return 'maximized';
+      if (currentMode === 'maximized') return 'minimized';
+      return 'normal';
+    });
+  }, []);
+
+  useEffect(() => {
+    const preventDefault = (e) => e.preventDefault();
     window.addEventListener('dragover', preventDefault, false);
     window.addEventListener('drop', preventDefault, false);
-
     return () => {
       window.removeEventListener('dragover', preventDefault, false);
       window.removeEventListener('drop', preventDefault, false);
@@ -43,43 +50,63 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (isMobile) return;
+    if (isMobile) {
+      if (verticalSplitRef.current) {
+        verticalSplitRef.current.destroy();
+        verticalSplitRef.current = null;
+      }
+      return;
+    }
 
     const horizontalSplit = Split(['#sidebar', '#main-area'], {
-      sizes: [25, 75],
-      minSize: [200, 300],
-      gutterSize: 8,
-      cursor: 'col-resize',
+      sizes: [15, 85], minSize: [200, 300], gutterSize: 8, cursor: 'col-resize',
     });
 
-    const verticalSplit = Split(['#map-area', '#graph-area'], {
-      sizes: [70, 30],
-      direction: 'vertical',
-      minSize: [100, 100],
-      gutterSize: 8,
-      cursor: 'row-resize',
-    });
+    if (graphSizeMode === 'normal') {
+      verticalSplitRef.current = Split(['#map-area', '#graph-area'], {
+        sizes: [70, 30], direction: 'vertical', minSize: 100, gutterSize: 8, cursor: 'row-resize',
+      });
+    } else {
+      if (verticalSplitRef.current) {
+        verticalSplitRef.current.destroy();
+        verticalSplitRef.current = null;
+      }
+    }
 
     return () => {
-      if (horizontalSplit) horizontalSplit.destroy();
-      if (verticalSplit) verticalSplit.destroy();
+      horizontalSplit.destroy();
+      if (verticalSplitRef.current) {
+        verticalSplitRef.current.destroy();
+        verticalSplitRef.current = null;
+      }
     };
-  }, [isMobile]);
+  }, [isMobile, graphSizeMode]);
 
-  const sidebarClasses = `
-    ${isMobile ? 'sidebar-mobile' : 'split'}
-    ${isMobile && isSidebarOpen ? 'open' : ''}
-  `;
+  const getGraphAreaStyle = () => {
+    if (isMobile || graphSizeMode === 'normal') return {};
+    if (graphSizeMode === 'maximized') return { flexGrow: 1, height: '100%', minHeight: '0' };
+    if (graphSizeMode === 'minimized') return { flexGrow: 0, height: '0', minHeight: '0', overflow: 'hidden' };
+    return {};
+  };
+  const getMapAreaStyle = () => {
+    if (isMobile || graphSizeMode === 'normal') return {};
+    if (graphSizeMode === 'maximized') return { flexGrow: 0, height: '0', minHeight: '0', overflow: 'hidden' };
+    if (graphSizeMode === 'minimized') return { flexGrow: 1, height: '100%', minHeight: '0' };
+    return {};
+  };
+  
+  const getGraphButtonIcon = () => {
+    if (graphSizeMode === 'normal') return '↗';
+    if (graphSizeMode === 'maximized') return '↙';
+    return '↔';
+  };
+
+  const sidebarClasses = `${isMobile ? 'sidebar-mobile' : 'split'} ${isMobile && isSidebarOpen ? 'open' : ''}`;
 
   return (
     <div className="app-container">
       {isFilterModalOpen && (
-        <FilterModal
-          currentFilter={filter}
-          onApplyFilter={setFilter}
-          onClose={toggleFilterModal}
-          mapBounds={mapBounds}
-        />
+        <FilterModal currentFilter={filter} onApplyFilter={setFilter} onClose={toggleFilterModal} mapBounds={mapBounds} />
       )}
       {isMobile && (
         <button className="hamburger-menu" onClick={toggleSidebar}>
@@ -87,21 +114,16 @@ function App() {
         </button>
       )}
       <div id="sidebar" className={sidebarClasses}>
-        <Sidebar
-          gpxTracks={gpxTracks}
-          onFileAdd={addGpxFiles}
-          onToggleVisibility={toggleGpxVisibility}
-          onFocusGpx={setFocusedGpxId}
-          focusedGpxId={focusedGpxId}
-          onToggleFilterModal={toggleFilterModal}
-          onResetSelection={resetSelection}
-          onDeleteSelected={deleteSelectedGpx}
-          mapBounds={mapBounds}
-        />
+        <Sidebar gpxTracks={gpxTracks} onFileAdd={addGpxFiles} onToggleVisibility={toggleGpxVisibility} onFocusGpx={setFocusedGpxId} focusedGpxId={focusedGpxId} onToggleFilterModal={toggleFilterModal} onResetSelection={resetSelection} onDeleteSelected={deleteSelectedGpx} mapBounds={mapBounds} />
       </div>
       {!isMobile && <div className="gutter gutter-horizontal"></div>}
       <div id="main-area" className={isMobile ? 'main-area-mobile' : 'split'}>
         <GpxInfoOverlay gpx={focusedGpxData} />
+        {!isMobile && (
+          <button onClick={toggleGraphSizeMode} className="graph-size-toggle-btn" title="グラフサイズ切替">
+            {getGraphButtonIcon()}
+          </button>
+        )}
         {isMobile ? (
           <>
             <div className="view-toggle">
@@ -110,12 +132,7 @@ function App() {
             </div>
             {mobileView === 'map' && (
               <div id="map-area" className="map-area-mobile">
-                <Map 
-                  gpxData={visibleGpxTracks} 
-                  focusedGpxData={focusedGpxData}
-                  hoveredPoint={hoveredPoint}
-                  onBoundsChange={onBoundsChange}
-                />
+                <Map gpxData={visibleGpxTracks} focusedGpxData={focusedGpxData} hoveredPoint={hoveredPoint} onBoundsChange={onBoundsChange} />
               </div>
             )}
             {mobileView === 'graph' && (
@@ -126,16 +143,11 @@ function App() {
           </>
         ) : (
           <>
-            <div id="map-area" className="split-vertical">
-              <Map 
-                gpxData={visibleGpxTracks} 
-                focusedGpxData={focusedGpxData}
-                hoveredPoint={hoveredPoint}
-                onBoundsChange={onBoundsChange}
-              />
+            <div id="map-area" className="split-vertical" style={getMapAreaStyle()}>
+              <Map gpxData={visibleGpxTracks} focusedGpxData={focusedGpxData} hoveredPoint={hoveredPoint} onBoundsChange={onBoundsChange} />
             </div>
-            <div id="graph-area" className="split-vertical">
-              <ElevationGraph gpxData={visibleGpxTracks} onPointHover={setHoveredPoint} focusedGpxData={focusedGpxData} />
+            <div id="graph-area" className="split-vertical" style={getGraphAreaStyle()}>
+              <ElevationGraph gpxData={visibleGpxTracks} onPointHover={setHoveredPoint} focusedGpxData={focusedGpxData} key={graphSizeMode} />
             </div>
           </>
         )}

@@ -2,7 +2,7 @@
   position: absolute;
   top: 50px; /* view-toggleボタンの下に来るように調整 */
   right: 10px; /* Leafletのコントロールと被らないように調整 */
-  z-index: 990; /* サイドバー(1000)より下、地図コントロールより上 */
+  z-index: 450; /* グラフ(500)より下、地図コントロール(400)より上 */
   background-color: rgba(255, 255, 255, 0.8);
   padding: 10px;
   border-radius: 5px;

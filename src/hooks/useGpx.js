@@ -66,14 +66,19 @@ const useGpx = (mapBounds) => {
     }
   };
 
-  const setFocusedGpxId = async (id) => {
+  const setFocusedGpxId = (id) => {
+    // 即座にフォーカスをクリア
+    _setFocusedGpxId(null);
+    setFocusedGpxData(null);
+
+    // 次のフレームで新しいIDのデータを取得・設定
     if (id) {
-      const fullData = await getGpxDataById(id);
-      setFocusedGpxData(fullData);
-    } else {
-      setFocusedGpxData(null);
+      requestAnimationFrame(async () => {
+        const fullData = await getGpxDataById(id);
+        setFocusedGpxData(fullData);
+        _setFocusedGpxId(id);
+      });
     }
-    _setFocusedGpxId(id);
   };
 
   const resetSelection = () => {

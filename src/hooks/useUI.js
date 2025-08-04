@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 const useUI = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const [isFilterModalOpen, setFilterModalOpen] = useState(false); // フィルターモーダルの表示状態
+  const [isFilterModalOpen, setFilterModalOpen] = useState(false);
   const [mobileView, setMobileView] = useState('map'); // 'map' or 'graph'
 
   useEffect(() => {
@@ -25,7 +25,15 @@ const useUI = () => {
     setFilterModalOpen(!isFilterModalOpen);
   };
 
-  return { isMobile, isSidebarOpen, toggleSidebar, isFilterModalOpen, toggleFilterModal, mobileView, setMobileView };
+  return { 
+    isMobile, 
+    isSidebarOpen, 
+    toggleSidebar, 
+    isFilterModalOpen, 
+    toggleFilterModal, 
+    mobileView, 
+    setMobileView,
+  };
 };
 
 export default useUI;

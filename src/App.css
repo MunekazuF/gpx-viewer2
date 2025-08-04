@@ -24,12 +24,12 @@ body, html, #root {
   display: flex;
   flex-direction: column;
   width: 100%;
+  position: relative; /* z-indexの基準点にする */
 }
 
 .split-vertical {
   overflow: hidden;
   position: relative; /* 子要素の配置基準 */
-  flex-grow: 1;
 }
 
 #sidebar {
@@ -41,10 +41,18 @@ body, html, #root {
   display: flex;
   justify-content: center;
   align-items: center;
+  transition: height 0.3s ease-in-out, min-height 0.3s ease-in-out;
+}
+
+.leaflet-control-layers {
+  z-index: 400 !important;
 }
 
 #graph-area {
   background-color: #d0d0d0;
+  position: relative; /* z-indexを効かせるため */
+  z-index: 500; /* 地図コントロール(400)より手前に表示 */
+  transition: height 0.3s ease-in-out, min-height 0.3s ease-in-out;
 }
 
 .gutter {
@@ -63,6 +71,30 @@ body, html, #root {
   padding: 10px;
   box-sizing: border-box;
   height: 100%;
+}
+
+/* --- グラフサイズ調整ボタン --- */
+.graph-size-toggle-btn {
+  position: absolute;
+  bottom: 10px; /* グラフエリアの近くに配置 */
+  right: 10px;
+  z-index: 501; /* グラフエリアより手前 */
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.graph-size-toggle-btn:hover {
+  background-color: white;
+}
+
+/* Leafletの右下コントロール群全体を少し上にずらす */
+.leaflet-bottom.leaflet-right {
+  bottom: 45px;
 }
 
 

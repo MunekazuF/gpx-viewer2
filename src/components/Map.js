@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, LayersControl, ScaleControl, Polyline, Marker, useMap, useMapEvents, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 // --- Leafletのデフォルトアイコン問題を修正 ---
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -27,27 +28,37 @@ const MapEvents = ({ onBoundsChange }) => {
 // --- MapController: 地図の表示範囲を自動調整するコンポーネント ---
 const MapController = ({ gpxData, focusedGpxData }) => {
   const map = useMap();
-  const lastFittedIdRef = useRef(null); // 最後にfitBoundsしたIDを記録
+  const lastFittedIdRef = useRef(null);
 
   useEffect(() => {
-    let targetGpx = null;
+    // ユーザーによるフォーカス操作を最優先で処理
     if (focusedGpxData) {
-      targetGpx = focusedGpxData;
-    } else if (gpxData && gpxData.length === 1) {
-      targetGpx = gpxData[0];
+      if (focusedGpxData.id !== lastFittedIdRef.current) {
+        if (focusedGpxData.points && focusedGpxData.points.length > 0) {
+          const points = focusedGpxData.points.map(p => [p.lat, p.lng]);
+          const bounds = L.latLngBounds(points);
+          map.invalidateSize();
+          map.fitBounds(bounds, { padding: [50, 50] });
+          lastFittedIdRef.current = focusedGpxData.id;
+        }
+      }
+      return; // フォーカスがある場合は、ここで処理を終了
     }
 
-    if (!targetGpx) {
-      lastFittedIdRef.current = null;
-      return;
-    }
+    // フォーカスが外れた場合、または無い場合は、ロックを解除
+    lastFittedIdRef.current = null;
 
-    if (targetGpx.id !== lastFittedIdRef.current) {
-      if (targetGpx.points && targetGpx.points.length > 0) {
-        const points = targetGpx.points.map(p => [p.lat, p.lng]);
-        const bounds = L.latLngBounds(points);
-        map.fitBounds(bounds, { padding: [50, 50] });
-        lastFittedIdRef.current = targetGpx.id;
+    // フォーカスが無く、表示トラックが1つの場合のみ、自動ズーム
+    if (gpxData && gpxData.length === 1) {
+      const singleTrack = gpxData[0];
+      if (singleTrack.id !== lastFittedIdRef.current) {
+        if (singleTrack.points && singleTrack.points.length > 0) {
+          const points = singleTrack.points.map(p => [p.lat, p.lng]);
+          const bounds = L.latLngBounds(points);
+          map.invalidateSize();
+          map.fitBounds(bounds, { padding: [50, 50] });
+          lastFittedIdRef.current = singleTrack.id;
+        }
       }
     }
   }, [gpxData, focusedGpxData, map]);
