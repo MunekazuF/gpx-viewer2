@@ -7,16 +7,17 @@ import GpxInfoOverlay from './GpxInfoOverlay';
 import FilterModal from './FilterModal';
 import useUI from './hooks/useUI';
 import useGpx from './hooks/useGpx';
+import useMap from './hooks/useMap';
 import './App.css';
 
 function App() {
-  const [mapBounds, setMapBounds] = useState(null);
   const [hoveredPoint, setHoveredPoint] = useState(null);
   const { isMobile, isSidebarOpen, toggleSidebar, isFilterModalOpen, toggleFilterModal } = useUI();
+  const { mapBounds, MapEventsComponent, MapControllerComponent } = useMap();
   const {
     gpxTracks,
     visibleGpxTracks,
-    focusedGpxData, // useGpxから直接受け取る
+    focusedGpxData,
     addGpxFiles,
     toggleGpxVisibility,
     focusedGpxId,
@@ -102,7 +103,12 @@ function App() {
       <div id="main-area" className={isMobile ? 'main-area-mobile' : 'split'}>
         <GpxInfoOverlay gpx={focusedGpxData} />
         <div id="map-area" className="split-vertical">
-          <Map gpxData={visibleGpxTracks} focusedGpxData={focusedGpxData} onBoundsChange={setMapBounds} hoveredPoint={hoveredPoint} />
+          <Map 
+            gpxData={visibleGpxTracks} 
+            hoveredPoint={hoveredPoint}
+            MapEventsComponent={MapEventsComponent}
+            MapControllerComponent={() => <MapControllerComponent gpxData={visibleGpxTracks} focusedGpxData={focusedGpxData} />}
+          />
         </div>
         <div id="graph-area" className="split-vertical">
           <ElevationGraph gpxData={visibleGpxTracks} onPointHover={setHoveredPoint} focusedGpxData={focusedGpxData} />

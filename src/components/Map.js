@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, LayersControl, ScaleControl, Polyline, useMapEvents, useMap, Marker } from 'react-leaflet';
+import React from 'react';
+import { MapContainer, TileLayer, LayersControl, ScaleControl, Polyline, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -15,44 +15,7 @@ L.Icon.Default.mergeOptions({
 });
 // --- 修正ここまで ---
 
-const MapEvents = ({ onBoundsChange }) => {
-  const map = useMapEvents({
-    moveend: () => {
-      onBoundsChange(map.getBounds());
-    },
-    zoomend: () => {
-      onBoundsChange(map.getBounds());
-    },
-  });
-  return null;
-};
-
-const MapController = ({ gpxData, focusedGpxData }) => {
-  const map = useMap();
-
-  useEffect(() => {
-    let targetGpx = null;
-
-    // 1. フォーカスされたGPXデータを最優先
-    if (focusedGpxData) {
-      targetGpx = focusedGpxData;
-    }
-    // 2. フォーカスがなければ、表示されているGPXデータが1つの場合
-    else if (gpxData && gpxData.length === 1) {
-      targetGpx = gpxData[0];
-    }
-
-    if (targetGpx && targetGpx.points && targetGpx.points.length > 0) {
-      const points = targetGpx.points.map(p => [p.lat, p.lng]);
-      const bounds = L.latLngBounds(points);
-      map.fitBounds(bounds);
-    }
-  }, [gpxData, focusedGpxData, map]);
-
-  return null;
-}
-
-const Map = ({ gpxData, focusedGpxData, onBoundsChange, hoveredPoint }) => {
+const Map = ({ gpxData, hoveredPoint, MapEventsComponent, MapControllerComponent }) => {
   // 初期表示位置を東京駅に設定
   const position = [35.681236, 139.767125];
   const gpxList = gpxData || [];
@@ -88,9 +51,13 @@ const Map = ({ gpxData, focusedGpxData, onBoundsChange, hoveredPoint }) => {
           color={gpx.color || 'blue'}
         />
       ))}
+      
       {hoveredPoint && <Marker position={[hoveredPoint.lat, hoveredPoint.lng]} />}
-      <MapEvents onBoundsChange={onBoundsChange} />
-      <MapController gpxData={gpxData} focusedGpxData={focusedGpxData} />
+      
+      {/* App.jsから渡されたコンポーネントをレンダリング */}
+      <MapEventsComponent />
+      <MapControllerComponent />
+
     </MapContainer>
   );
 };
