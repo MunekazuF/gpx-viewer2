@@ -29,6 +29,7 @@ body, html, #root {
 .split-vertical {
   overflow: hidden;
   position: relative; /* 子要素の配置基準 */
+  flex-grow: 1;
 }
 
 #sidebar {
@@ -40,7 +41,6 @@ body, html, #root {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100%;
 }
 
 #graph-area {
@@ -104,10 +104,57 @@ body, html, #root {
   flex-direction: column;
 }
 
+.map-area-mobile {
+  height: calc(100dvh - 40px); /* トグルボタンの高さを引く */
+  width: 100%;
+}
+
+.graph-area-mobile {
+  height: calc(100dvh - 40px); /* トグルボタンの高さを引く */
+  width: 100%;
+}
+
+.view-toggle {
+  display: flex;
+  justify-content: center;
+  padding: 5px;
+  background-color: #f0f0f0;
+  height: 30px; /* 固定の高さを指定 */
+  position: relative; /* z-indexを効かせるため */
+  z-index: 999;
+}
+
+.view-toggle button {
+  padding: 5px 15px;
+  border: 1px solid #ccc;
+  background-color: white;
+  cursor: pointer;
+}
+
+.view-toggle button.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.view-toggle button:first-child {
+  border-top-left-radius: 5px;
+  border-bottom-left-radius: 5px;
+}
+
+.view-toggle button:last-child {
+  border-top-right-radius: 5px;
+  border-bottom-right-radius: 5px;
+  border-left: none;
+}
+
 /* メディアクエリ */
 @media (min-width: 769px) {
   .app-container {
     display: flex;
+  }
+  .view-toggle {
+    display: none;
   }
   .hamburger-menu, .sidebar-mobile, #main-area-mobile {
     display: none;

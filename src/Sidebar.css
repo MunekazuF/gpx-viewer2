@@ -92,3 +92,9 @@
   display: flex;
   gap: 10px;
 }
+
+@media (max-width: 768px) {
+  .sidebar-header {
+    margin-left: 40px; /* ハンバーガーメニューの閉じるボタンと重ならないように調整 */
+  }
+}

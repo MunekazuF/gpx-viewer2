@@ -12,8 +12,8 @@ import './App.css';
 
 function App() {
   const [hoveredPoint, setHoveredPoint] = useState(null);
-  const { isMobile, isSidebarOpen, toggleSidebar, isFilterModalOpen, toggleFilterModal } = useUI();
-  const { mapBounds, MapEventsComponent, MapControllerComponent } = useMap();
+  const { isMobile, isSidebarOpen, toggleSidebar, isFilterModalOpen, toggleFilterModal, mobileView, setMobileView } = useUI();
+  const { mapBounds, onBoundsChange } = useMap(); // シンプルなフックに変更
   const {
     gpxTracks,
     visibleGpxTracks,
@@ -102,17 +102,43 @@ function App() {
       {!isMobile && <div className="gutter gutter-horizontal"></div>}
       <div id="main-area" className={isMobile ? 'main-area-mobile' : 'split'}>
         <GpxInfoOverlay gpx={focusedGpxData} />
-        <div id="map-area" className="split-vertical">
-          <Map 
-            gpxData={visibleGpxTracks} 
-            hoveredPoint={hoveredPoint}
-            MapEventsComponent={MapEventsComponent}
-            MapControllerComponent={() => <MapControllerComponent gpxData={visibleGpxTracks} focusedGpxData={focusedGpxData} />}
-          />
-        </div>
-        <div id="graph-area" className="split-vertical">
-          <ElevationGraph gpxData={visibleGpxTracks} onPointHover={setHoveredPoint} focusedGpxData={focusedGpxData} />
-        </div>
+        {isMobile ? (
+          <>
+            <div className="view-toggle">
+              <button onClick={() => setMobileView('map')} className={mobileView === 'map' ? 'active' : ''}>地図</button>
+              <button onClick={() => setMobileView('graph')} className={mobileView === 'graph' ? 'active' : ''}>グラフ</button>
+            </div>
+            {mobileView === 'map' && (
+              <div id="map-area" className="map-area-mobile">
+                <Map 
+                  gpxData={visibleGpxTracks} 
+                  focusedGpxData={focusedGpxData}
+                  hoveredPoint={hoveredPoint}
+                  onBoundsChange={onBoundsChange}
+                />
+              </div>
+            )}
+            {mobileView === 'graph' && (
+              <div id="graph-area" className="graph-area-mobile">
+                <ElevationGraph gpxData={visibleGpxTracks} onPointHover={setHoveredPoint} focusedGpxData={focusedGpxData} />
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <div id="map-area" className="split-vertical">
+              <Map 
+                gpxData={visibleGpxTracks} 
+                focusedGpxData={focusedGpxData}
+                hoveredPoint={hoveredPoint}
+                onBoundsChange={onBoundsChange}
+              />
+            </div>
+            <div id="graph-area" className="split-vertical">
+              <ElevationGraph gpxData={visibleGpxTracks} onPointHover={setHoveredPoint} focusedGpxData={focusedGpxData} />
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
