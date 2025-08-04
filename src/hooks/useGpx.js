@@ -91,27 +91,43 @@ const useGpx = (mapBounds) => {
   const applyFilter = useCallback(async (filters) => {
     setCurrentFilter(filters);
 
-    const allTracksFullData = await Promise.all(
-      gpxTracks.map(track => getGpxDataById(track.id))
-    );
-
-    const filtered = filterGpxFiles(allTracksFullData, filters);
+    // メモリ上の軽量なメタデータのみでフィルタリング
+    const filtered = filterGpxFiles(gpxTracks, filters);
     const filteredIds = filtered.map(track => track.id);
 
+    // フィルター結果をisVisibleフラグに反映
     const newGpxTracks = gpxTracks.map(track => {
       const isFiltered = filteredIds.includes(track.id);
+      // 20件の上限を維持しつつ、表示状態を更新
       const shouldBeVisible = isFiltered && filteredIds.indexOf(track.id) < 20;
-
-      if (shouldBeVisible) {
-        const fullData = filtered.find(t => t.id === track.id);
-        return { ...fullData, isVisible: true };
-      } else {
-        const { points, ...metadata } = track;
-        return { ...metadata, isVisible: false, points: null };
+      
+      // isVisibleが変更される可能性のあるトラックのみを更新
+      if (track.isVisible !== shouldBeVisible) {
+        return { ...track, isVisible: shouldBeVisible, points: null }; // 表示時にpointsは再取得
       }
+      return track;
     });
 
-    setGpxTracks(newGpxTracks);
+    // 実際に表示されるトラックの完全なデータを非同期で読み込む
+    const tracksToLoad = newGpxTracks.filter(t => t.isVisible && !t.points);
+    if (tracksToLoad.length > 0) {
+      const loadedTracks = await Promise.all(
+        tracksToLoad.map(t => getGpxDataById(t.id))
+      );
+      
+      setGpxTracks(currentTracks => {
+        const updatedTracks = [...currentTracks];
+        loadedTracks.forEach(loadedTrack => {
+          const index = updatedTracks.findIndex(t => t.id === loadedTrack.id);
+          if (index !== -1) {
+            updatedTracks[index] = { ...loadedTrack, isVisible: true };
+          }
+        });
+        return updatedTracks;
+      });
+    } else {
+      setGpxTracks(newGpxTracks);
+    }
   }, [gpxTracks]);
 
   const visibleGpxTracks = useMemo(() => {
