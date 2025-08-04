@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -132,6 +132,16 @@ ChartJS.register(crosshairPlugin);
 
 
 const ElevationGraph = ({ gpxData, onPointHover, focusedGpxData }) => {
+  const [graphMode, setGraphMode] = useState('elevation'); // 'elevation', 'diff', 'gain'
+
+  const toggleGraphMode = useCallback(() => {
+    setGraphMode(currentMode => {
+      if (currentMode === 'elevation') return 'diff';
+      if (currentMode === 'diff') return 'gain';
+      return 'elevation';
+    });
+  }, []);
+
   const longestTrack = useMemo(() => {
     if (!gpxData || gpxData.length === 0) return null;
     return gpxData.reduce((longest, current) => {
@@ -141,16 +151,56 @@ const ElevationGraph = ({ gpxData, onPointHover, focusedGpxData }) => {
     });
   }, [gpxData]);
 
-  const data = {
-    labels: longestTrack?.points.map(p => p.distance.toFixed(2)) || [],
-    datasets: (gpxData || []).map((gpx, index) => ({
-      label: gpx.name,
-      data: gpx.points.map(p => ({ x: p.distance, y: p.ele })),
-      borderColor: gpx.color || `hsl(${index * 137.5}, 70%, 50%)`,
-      backgroundColor: gpx.color ? `${gpx.color.slice(0, -1)}, 0.5)` : `hsla(${index * 137.5}, 70%, 50%, 0.5)`,
-      tension: 0.1,
-      pointRadius: 0,
-    })),
+  const chartData = useMemo(() => {
+    const datasets = (gpxData || []).map((gpx, index) => {
+      let yData;
+      switch (graphMode) {
+        case 'diff':
+          const startEle = gpx.points[0]?.ele || 0;
+          yData = gpx.points.map(p => p.ele - startEle);
+          break;
+        case 'gain':
+          let accumulatedGain = 0;
+          yData = gpx.points.map((p, i) => {
+            if (i > 0 && p.ele > gpx.points[i - 1].ele) {
+              accumulatedGain += p.ele - gpx.points[i - 1].ele;
+            }
+            return accumulatedGain;
+          });
+          break;
+        default: // 'elevation'
+          yData = gpx.points.map(p => p.ele);
+          break;
+      }
+
+      return {
+        label: gpx.name,
+        data: gpx.points.map((p, i) => ({ x: p.distance, y: yData[i] })),
+        borderColor: gpx.color || `hsl(${index * 137.5}, 70%, 50%)`,
+        backgroundColor: gpx.color ? `${gpx.color.slice(0, -1)}, 0.5)` : `hsla(${index * 137.5}, 70%, 50%, 0.5)`,
+        tension: 0.1,
+        pointRadius: 0,
+      };
+    });
+
+    return {
+      labels: longestTrack?.points.map(p => p.distance.toFixed(2)) || [],
+      datasets: datasets,
+    };
+  }, [gpxData, longestTrack, graphMode]);
+
+  const getButtonLabel = () => {
+    if (graphMode === 'elevation') return '標高';
+    if (graphMode === 'diff') return '標高差';
+    return '獲得標高';
+  };
+
+  const getYAxisLabel = () => {
+    switch (graphMode) {
+      case 'diff': return '標高差 (m)';
+      case 'gain': return '獲得標高 (m)';
+      default: return '標高 (m)';
+    }
   };
 
   const options = {
@@ -176,7 +226,7 @@ const ElevationGraph = ({ gpxData, onPointHover, focusedGpxData }) => {
       y: {
         title: {
           display: true,
-          text: '標高 (m)',
+          text: getYAxisLabel(),
         },
       },
       x: {
@@ -194,11 +244,16 @@ const ElevationGraph = ({ gpxData, onPointHover, focusedGpxData }) => {
 
   return (
     <div className="elevation-graph">
-      {(gpxData && gpxData.length > 0) ? (
-        <Line options={options} data={data} />
-      ) : (
-        <p>グラフを表示するデータがありません。</p>
-      )}
+      <div className="chart-container">
+        <button onClick={toggleGraphMode} className="graph-mode-toggle-btn">
+          {getButtonLabel()}
+        </button>
+        {(gpxData && gpxData.length > 0) ? (
+          <Line options={options} data={chartData} />
+        ) : (
+          <p>グラフを表示するデータがありません。</p>
+        )}
+      </div>
     </div>
   );
 };

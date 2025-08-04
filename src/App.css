@@ -68,9 +68,39 @@ body, html, #root {
 }
 
 .sidebar, .elevation-graph {
-  padding: 10px;
+  /* padding: 10px; */ /* elevation-graphからは削除 */
   box-sizing: border-box;
   height: 100%;
+}
+
+.elevation-graph {
+  display: flex;
+  flex-direction: column;
+  padding: 0; /* パディングを削除 */
+  box-sizing: border-box;
+  height: 100%;
+}
+
+.chart-container {
+  flex-grow: 1;
+  position: relative;
+  height: 100%; /* 高さを100%に */
+}
+
+.graph-mode-toggle-btn {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 10;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.graph-mode-toggle-btn:hover {
+  background-color: white;
 }
 
 /* --- グラフサイズ調整ボタン --- */
