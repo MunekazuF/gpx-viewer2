@@ -1,6 +1,19 @@
 import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, LayersControl, ScaleControl, Polyline, useMapEvents, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, LayersControl, ScaleControl, Polyline, useMapEvents, useMap, Marker } from 'react-leaflet';
 import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// --- Leafletのデフォルトアイコン問題を修正 ---
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
+// --- 修正ここまで ---
 
 const MapEvents = ({ onBoundsChange }) => {
   const map = useMapEvents({
@@ -39,7 +52,7 @@ const MapController = ({ gpxData, focusedGpxData }) => {
   return null;
 }
 
-const Map = ({ gpxData, focusedGpxData, onBoundsChange }) => {
+const Map = ({ gpxData, focusedGpxData, onBoundsChange, hoveredPoint }) => {
   // 初期表示位置を東京駅に設定
   const position = [35.681236, 139.767125];
   const gpxList = gpxData || [];
@@ -72,9 +85,10 @@ const Map = ({ gpxData, focusedGpxData, onBoundsChange }) => {
         <Polyline
           key={gpx.id}
           positions={gpx.points.map(p => [p.lat, p.lng])}
-          color="blue" // ToDo: 仕様書通りランダムな色にする
+          color={gpx.color || 'blue'}
         />
       ))}
+      {hoveredPoint && <Marker position={[hoveredPoint.lat, hoveredPoint.lng]} />}
       <MapEvents onBoundsChange={onBoundsChange} />
       <MapController gpxData={gpxData} focusedGpxData={focusedGpxData} />
     </MapContainer>

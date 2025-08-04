@@ -3,6 +3,15 @@ import { parseGpx } from '../utils/gpxParser';
 import { saveGpxData, getAllGpxMetadata, getGpxDataById, deleteGpxDataByIds } from '../utils/db';
 import { filterGpxFiles } from '../utils/gpxFilter';
 
+// 緑色を避けつつ、ランダムで鮮やかな色を生成する
+const generateColor = () => {
+  let hue;
+  do {
+    hue = Math.floor(Math.random() * 360);
+  } while (hue >= 80 && hue <= 160); // 緑色の範囲を避ける
+  return `hsl(${hue}, 90%, 50%)`;
+};
+
 const useGpx = (mapBounds) => {
   const [gpxTracks, setGpxTracks] = useState([]); // 全てのGPXメタデータと表示状態
   const [focusedGpxId, _setFocusedGpxId] = useState(null);
@@ -12,7 +21,12 @@ const useGpx = (mapBounds) => {
   useEffect(() => {
     const loadMetadata = async () => {
       const metadata = await getAllGpxMetadata();
-      const tracks = metadata.map(meta => ({ ...meta, isVisible: false, points: null }));
+      const tracks = metadata.map(meta => ({
+        ...meta,
+        isVisible: false,
+        points: null,
+        color: meta.color || generateColor() // DBに色がなければ生成
+      }));
       setGpxTracks(tracks);
     };
     loadMetadata();
@@ -27,7 +41,8 @@ const useGpx = (mapBounds) => {
       reader.onload = async (e) => {
         try {
           const parsedData = parseGpx(e.target.result);
-          const newTrack = { id: Date.now() + file.name, fileName: file.name, ...parsedData };
+          const color = generateColor();
+          const newTrack = { id: Date.now() + file.name, fileName: file.name, ...parsedData, color };
           await saveGpxData(newTrack);
           const { points, ...metadata } = newTrack;
           setGpxTracks(prev => [...prev, { ...metadata, isVisible: false, points: null }]);

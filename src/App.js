@@ -11,6 +11,7 @@ import './App.css';
 
 function App() {
   const [mapBounds, setMapBounds] = useState(null);
+  const [hoveredPoint, setHoveredPoint] = useState(null);
   const { isMobile, isSidebarOpen, toggleSidebar, isFilterModalOpen, toggleFilterModal } = useUI();
   const {
     gpxTracks,
@@ -101,10 +102,10 @@ function App() {
       <div id="main-area" className={isMobile ? 'main-area-mobile' : 'split'}>
         <GpxInfoOverlay gpx={focusedGpxData} />
         <div id="map-area" className="split-vertical">
-          <Map gpxData={visibleGpxTracks} focusedGpxData={focusedGpxData} onBoundsChange={setMapBounds} />
+          <Map gpxData={visibleGpxTracks} focusedGpxData={focusedGpxData} onBoundsChange={setMapBounds} hoveredPoint={hoveredPoint} />
         </div>
         <div id="graph-area" className="split-vertical">
-          <ElevationGraph gpxData={visibleGpxTracks} />
+          <ElevationGraph gpxData={visibleGpxTracks} onPointHover={setHoveredPoint} focusedGpxData={focusedGpxData} />
         </div>
       </div>
     </div>
