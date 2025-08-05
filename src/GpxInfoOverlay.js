@@ -1,7 +1,7 @@
 import React from 'react';
 import './GpxInfoOverlay.css';
 
-const GpxInfoOverlay = ({ gpx }) => {
+const GpxInfoOverlay = ({ gpx, onClose }) => {
   if (!gpx) {
     return null;
   }
@@ -36,7 +36,7 @@ const GpxInfoOverlay = ({ gpx }) => {
   const formatNumber = (num) => new Intl.NumberFormat('ja-JP').format(num);
 
   return (
-    <div className="gpx-info-overlay">
+    <div className="gpx-info-overlay" onClick={onClose}>
       <h3>{gpx.name}</h3>
       <ul>
         <li><strong>出発日:</strong> {formatDate(gpx.time)}</li>

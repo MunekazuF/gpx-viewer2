@@ -210,6 +210,16 @@ body, html, #root {
   border-left: none;
 }
 
+/* --- マーカーの色を変更 --- */
+.start-marker-icon {
+  filter: hue-rotate(240deg); /* 青 -> 緑 */
+}
+
+.end-marker-icon {
+  filter: hue-rotate(120deg); /* 青 -> 赤 */
+}
+
+
 /* メディアクエリ */
 @media (min-width: 769px) {
   .app-container {

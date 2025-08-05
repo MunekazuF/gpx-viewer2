@@ -16,6 +16,7 @@ const useGpx = (mapBounds) => {
   const [gpxTracks, setGpxTracks] = useState([]); // 全てのGPXメタデータと表示状態
   const [focusedGpxId, _setFocusedGpxId] = useState(null);
   const [focusedGpxData, setFocusedGpxData] = useState(null); // フォーカスされたトラックの完全なデータ
+  const [isInfoOverlayVisible, setInfoOverlayVisible] = useState(false);
   const [currentFilter, setCurrentFilter] = useState({ keyword: '', startDate: '', endDate: '', useMapBounds: false, mapBounds: null });
 
   useEffect(() => {
@@ -67,22 +68,42 @@ const useGpx = (mapBounds) => {
   };
 
   const setFocusedGpxId = (id) => {
-    // 即座にフォーカスをクリア
-    _setFocusedGpxId(null);
-    setFocusedGpxData(null);
-
-    // 次のフレームで新しいIDのデータを取得・設定
-    if (id) {
+    if (id && id === focusedGpxId) {
+      // 同じIDが再度クリックされた場合は、オーバーレイの表示/非表示を切り替える
+      // そして、MapControllerが再ズームするようにfocusedGpxDataを一時的にnullにする
+      setInfoOverlayVisible(prev => !prev);
+      setFocusedGpxData(null); // これでMapControllerのuseEffectが再実行される
       requestAnimationFrame(async () => {
         const fullData = await getGpxDataById(id);
         setFocusedGpxData(fullData);
         _setFocusedGpxId(id);
       });
+    } else {
+      // 新しいIDがクリックされた場合
+      _setFocusedGpxId(null);
+      setFocusedGpxData(null);
+      if (id) {
+        requestAnimationFrame(async () => {
+          const fullData = await getGpxDataById(id);
+          setFocusedGpxData(fullData);
+          _setFocusedGpxId(id);
+          setInfoOverlayVisible(true); // 新しいデータを表示
+        });
+      } else {
+        setInfoOverlayVisible(false); // IDがnullなら非表示
+      }
     }
+  };
+
+  const hideInfoOverlay = () => {
+    setInfoOverlayVisible(false);
   };
 
   const resetSelection = () => {
     setGpxTracks(prev => prev.map(track => ({ ...track, isVisible: false, points: null })));
+    setInfoOverlayVisible(false);
+    _setFocusedGpxId(null);
+    setFocusedGpxData(null);
   };
 
   const deleteSelectedGpx = async () => {
@@ -91,6 +112,12 @@ const useGpx = (mapBounds) => {
 
     await deleteGpxDataByIds(selectedIds);
     setGpxTracks(prev => prev.filter(track => !selectedIds.includes(track.id)));
+    // 削除されたトラックがフォーカスされていたら、フォーカスも解除
+    if (selectedIds.includes(focusedGpxId)) {
+        setInfoOverlayVisible(false);
+        _setFocusedGpxId(null);
+        setFocusedGpxData(null);
+    }
   };
 
   const applyFilter = useCallback(async (filters) => {
@@ -143,6 +170,8 @@ const useGpx = (mapBounds) => {
     gpxTracks: gpxTracks, // 全てのトラックを返す
     visibleGpxTracks,
     focusedGpxData,
+    isInfoOverlayVisible,
+    hideInfoOverlay,
     addGpxFiles,
     toggleGpxVisibility,
     focusedGpxId,

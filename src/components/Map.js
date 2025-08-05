@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, LayersControl, ScaleControl, Polyline, Marker, useMap, useMapEvents, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import StartEndMarkers from './StartEndMarkers';
 
 // --- Leafletのデフォルトアイコン問題を修正 ---
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -33,32 +34,23 @@ const MapController = ({ gpxData, focusedGpxData }) => {
   useEffect(() => {
     // ユーザーによるフォーカス操作を最優先で処理
     if (focusedGpxData) {
-      if (focusedGpxData.id !== lastFittedIdRef.current) {
-        if (focusedGpxData.points && focusedGpxData.points.length > 0) {
-          const points = focusedGpxData.points.map(p => [p.lat, p.lng]);
-          const bounds = L.latLngBounds(points);
-          map.invalidateSize();
-          map.fitBounds(bounds, { padding: [50, 50] });
-          lastFittedIdRef.current = focusedGpxData.id;
-        }
+      if (focusedGpxData.points && focusedGpxData.points.length > 0) {
+        const points = focusedGpxData.points.map(p => [p.lat, p.lng]);
+        const bounds = L.latLngBounds(points);
+        map.invalidateSize();
+        map.fitBounds(bounds, { padding: [50, 50] });
       }
       return; // フォーカスがある場合は、ここで処理を終了
     }
 
-    // フォーカスが外れた場合、または無い場合は、ロックを解除
-    lastFittedIdRef.current = null;
-
     // フォーカスが無く、表示トラックが1つの場合のみ、自動ズーム
     if (gpxData && gpxData.length === 1) {
       const singleTrack = gpxData[0];
-      if (singleTrack.id !== lastFittedIdRef.current) {
-        if (singleTrack.points && singleTrack.points.length > 0) {
-          const points = singleTrack.points.map(p => [p.lat, p.lng]);
-          const bounds = L.latLngBounds(points);
-          map.invalidateSize();
-          map.fitBounds(bounds, { padding: [50, 50] });
-          lastFittedIdRef.current = singleTrack.id;
-        }
+      if (singleTrack.points && singleTrack.points.length > 0) {
+        const points = singleTrack.points.map(p => [p.lat, p.lng]);
+        const bounds = L.latLngBounds(points);
+        map.invalidateSize();
+        map.fitBounds(bounds, { padding: [50, 50] });
       }
     }
   }, [gpxData, focusedGpxData, map]);
@@ -67,7 +59,7 @@ const MapController = ({ gpxData, focusedGpxData }) => {
 };
 
 
-const Map = ({ gpxData, focusedGpxData, hoveredPoint, onBoundsChange }) => {
+const Map = ({ gpxData, focusedGpxData, hoveredPoint, onBoundsChange, onTrackClick }) => {
   // 初期表示位置を東京駅に設定
   const position = [35.681236, 139.767125];
   const gpxList = gpxData || [];
@@ -98,18 +90,26 @@ const Map = ({ gpxData, focusedGpxData, hoveredPoint, onBoundsChange }) => {
       </LayersControl>
       <ZoomControl position="bottomright" />
 
-      {gpxList.map(gpx => (
-        <Polyline
-          key={gpx.id}
-          positions={gpx.points.map(p => [p.lat, p.lng])}
-          color={gpx.color || 'blue'}
-        />
-      ))}
+      {gpxList.map(gpx => {
+        const isFocused = focusedGpxData && gpx.id === focusedGpxData.id;
+        return (
+          <Polyline
+            key={`${gpx.id}-${isFocused}`}
+            positions={gpx.points.map(p => [p.lat, p.lng])}
+            color={gpx.color || 'blue'}
+            weight={isFocused ? 5 : 3}
+            eventHandlers={{
+              click: () => onTrackClick(gpx.id),
+            }}
+          />
+        );
+      })}
       
       {hoveredPoint && <Marker position={[hoveredPoint.lat, hoveredPoint.lng]} />}
       
       <MapEvents onBoundsChange={onBoundsChange} />
       <MapController gpxData={gpxData} focusedGpxData={focusedGpxData} />
+      <StartEndMarkers gpxData={gpxList} />
 
     </MapContainer>
   );

@@ -18,6 +18,8 @@ function App() {
     gpxTracks,
     visibleGpxTracks,
     focusedGpxData,
+    isInfoOverlayVisible,
+    hideInfoOverlay,
     addGpxFiles,
     toggleGpxVisibility,
     focusedGpxId,
@@ -118,7 +120,7 @@ function App() {
       </div>
       {!isMobile && <div className="gutter gutter-horizontal"></div>}
       <div id="main-area" className={isMobile ? 'main-area-mobile' : 'split'}>
-        <GpxInfoOverlay gpx={focusedGpxData} />
+        {isInfoOverlayVisible && <GpxInfoOverlay gpx={focusedGpxData} onClose={hideInfoOverlay} />}
         {!isMobile && (
           <button onClick={toggleGraphSizeMode} className="graph-size-toggle-btn" title="グラフサイズ切替">
             {getGraphButtonIcon()}
@@ -132,7 +134,7 @@ function App() {
             </div>
             {mobileView === 'map' && (
               <div id="map-area" className="map-area-mobile">
-                <Map gpxData={visibleGpxTracks} focusedGpxData={focusedGpxData} hoveredPoint={hoveredPoint} onBoundsChange={onBoundsChange} />
+                <Map gpxData={visibleGpxTracks} focusedGpxData={focusedGpxData} hoveredPoint={hoveredPoint} onBoundsChange={onBoundsChange} onTrackClick={setFocusedGpxId} />
               </div>
             )}
             {mobileView === 'graph' && (
@@ -144,7 +146,7 @@ function App() {
         ) : (
           <>
             <div id="map-area" className="split-vertical" style={getMapAreaStyle()}>
-              <Map gpxData={visibleGpxTracks} focusedGpxData={focusedGpxData} hoveredPoint={hoveredPoint} onBoundsChange={onBoundsChange} />
+              <Map gpxData={visibleGpxTracks} focusedGpxData={focusedGpxData} hoveredPoint={hoveredPoint} onBoundsChange={onBoundsChange} onTrackClick={setFocusedGpxId} />
             </div>
             <div id="graph-area" className="split-vertical" style={getGraphAreaStyle()}>
               <ElevationGraph gpxData={visibleGpxTracks} onPointHover={setHoveredPoint} focusedGpxData={focusedGpxData} key={graphSizeMode} />
