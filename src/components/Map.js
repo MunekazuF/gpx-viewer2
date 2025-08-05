@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, LayersControl, ScaleControl, Polyline, Marker, useMap, useMapEvents, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet-touch-helper'; // leaflet-touch-helperをインポート
 import StartEndMarkers from './StartEndMarkers';
 
 // --- Leafletのデフォルトアイコン問題を修正 ---
@@ -58,14 +59,37 @@ const MapController = ({ gpxData, focusedGpxData }) => {
   return null;
 };
 
+// --- TouchHelperInitializer: Leaflet Touch Helperを初期化するコンポーネント ---
+const TouchHelperInitializer = () => {
+  const map = useMap();
+  useEffect(() => {
+    if (L.TouchHelper) {
+      L.TouchHelper.addTo(map);
+    }
+  }, [map]);
+  return null;
+};
+
 
 const Map = ({ gpxData, focusedGpxData, hoveredPoint, onBoundsChange, onTrackClick }) => {
   // 初期表示位置を東京駅に設定
   const position = [35.681236, 139.767125];
   const gpxList = gpxData || [];
 
+  const mapRef = useRef();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (mapRef.current) {
+        mapRef.current.invalidateSize();
+      }
+    }, 100); // 100ms後に実行
+
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <MapContainer center={position} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={false}>
+    <MapContainer center={position} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={false} ref={mapRef}>
       <ScaleControl position="bottomleft" />
       
       <LayersControl position="bottomright">
@@ -110,6 +134,7 @@ const Map = ({ gpxData, focusedGpxData, hoveredPoint, onBoundsChange, onTrackCli
       <MapEvents onBoundsChange={onBoundsChange} />
       <MapController gpxData={gpxData} focusedGpxData={focusedGpxData} />
       <StartEndMarkers gpxData={gpxList} />
+      <TouchHelperInitializer />
 
     </MapContainer>
   );
