@@ -220,6 +220,25 @@ const ElevationGraph = ({ gpxData, onPointHover, focusedGpxData }) => {
       },
       tooltip: {
         enabled: true,
+        callbacks: {
+          title: function(context) {
+            return null; // No title
+          },
+          label: function(context) {
+            return context.dataset.label || ''; // File name with color box
+          },
+          afterLabel: function(context) {
+            const point = gpxData[context.datasetIndex].points[context.dataIndex];
+            const time = point && point.time ? new Date(point.time).toLocaleString('ja-JP') : '';
+            const value = Math.round(context.parsed.y);
+            const yAxisLabel = getYAxisLabel().split(' ')[0];
+
+            return [
+              time,
+              `${yAxisLabel}: ${value} m`
+            ];
+          }
+        }
       }
     },
     scales: {
