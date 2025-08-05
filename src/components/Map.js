@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { MapContainer, TileLayer, LayersControl, ScaleControl, Polyline, Marker, useMap, useMapEvents, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-touch-helper'; // leaflet-touch-helperをインポート
 import StartEndMarkers from './StartEndMarkers';
+import { getCookie, setCookie } from '../utils/cookie';
 
 // --- Leafletのデフォルトアイコン問題を修正 ---
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -19,10 +20,11 @@ L.Icon.Default.mergeOptions({
 
 
 // --- MapEvents: 地図の移動/ズームイベントを捕捉するコンポーネント ---
-const MapEvents = ({ onBoundsChange }) => {
+const MapEvents = ({ onBoundsChange, onBaseLayerChange }) => {
   const map = useMapEvents({
     moveend: () => onBoundsChange(map.getBounds()),
     zoomend: () => onBoundsChange(map.getBounds()),
+    baselayerchange: (e) => onBaseLayerChange(e), // baselayerchangeイベントをリッスン
   });
   return null;
 };
@@ -30,7 +32,6 @@ const MapEvents = ({ onBoundsChange }) => {
 // --- MapController: 地図の表示範囲を自動調整するコンポーネント ---
 const MapController = ({ gpxData, focusedGpxData }) => {
   const map = useMap();
-  const lastFittedIdRef = useRef(null);
 
   useEffect(() => {
     // ユーザーによるフォーカス操作を最優先で処理
@@ -77,6 +78,9 @@ const Map = ({ gpxData, focusedGpxData, hoveredPoint, onBoundsChange, onTrackCli
   const gpxList = gpxData || [];
 
   const mapRef = useRef();
+  const [selectedTile, setSelectedTile] = useState(() => {
+    return getCookie('mapTile') || 'OpenStreetMap';
+  });
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -88,24 +92,30 @@ const Map = ({ gpxData, focusedGpxData, hoveredPoint, onBoundsChange, onTrackCli
     return () => clearTimeout(timer);
   }, []);
 
+  const handleBaseLayerChange = (e) => {
+    const newTileName = e.name;
+    setSelectedTile(newTileName);
+    setCookie('mapTile', newTileName, 365);
+  };
+
   return (
     <MapContainer center={position} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={false} ref={mapRef}>
       <ScaleControl position="bottomleft" />
       
-      <LayersControl position="bottomright">
-        <LayersControl.BaseLayer checked name="OpenStreetMap">
+      <LayersControl position="bottomright" onBaseLayerChange={handleBaseLayerChange}>
+        <LayersControl.BaseLayer checked={selectedTile === 'OpenStreetMap'} name="OpenStreetMap">
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           />
         </LayersControl.BaseLayer>
-        <LayersControl.BaseLayer name="OpenStreetMap Japan">
+        <LayersControl.BaseLayer checked={selectedTile === 'OpenStreetMap Japan'} name="OpenStreetMap Japan">
           <TileLayer
             url="https://tile.openstreetmap.jp/styles/osm-bright/{z}/{x}/{y}.png"
             attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
           />
         </LayersControl.BaseLayer>
-        <LayersControl.BaseLayer name="国土地理院">
+        <LayersControl.BaseLayer checked={selectedTile === '国土地理院'} name="国土地理院">
           <TileLayer
             url="https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>'
@@ -131,7 +141,7 @@ const Map = ({ gpxData, focusedGpxData, hoveredPoint, onBoundsChange, onTrackCli
       
       {hoveredPoint && <Marker position={[hoveredPoint.lat, hoveredPoint.lng]} />}
       
-      <MapEvents onBoundsChange={onBoundsChange} />
+      <MapEvents onBoundsChange={onBoundsChange} onBaseLayerChange={handleBaseLayerChange} />
       <MapController gpxData={gpxData} focusedGpxData={focusedGpxData} />
       <StartEndMarkers gpxData={gpxList} />
       <TouchHelperInitializer />
