@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/gpx-viewer2/static/css/main.ea4a2d9b.css",
+    "main.js": "/gpx-viewer2/static/js/main.0f7c99ed.js",
+    "index.html": "/gpx-viewer2/index.html",
+    "main.ea4a2d9b.css.map": "/gpx-viewer2/static/css/main.ea4a2d9b.css.map",
+    "main.0f7c99ed.js.map": "/gpx-viewer2/static/js/main.0f7c99ed.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.ea4a2d9b.css",
+    "static/js/main.0f7c99ed.js"
+  ]
+}
