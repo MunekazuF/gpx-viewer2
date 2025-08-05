@@ -1,23 +1,23 @@
 .sidebar-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: 100dvh; /* 100%から100dvhに変更 */
   width: 100%;
   background-color: #f7f7f7;
   position: relative; /* For drag overlay positioning */
 }
 
 .sidebar-header {
-  padding: 10px;
   border-bottom: 1px solid #ddd;
   display: flex;
   gap: 10px; /* ボタン間のスペース */
+  padding:0px 10px 10px 10px;
 }
 
 .file-upload-label, .filter-button, .reset-button, .delete-button {
   flex: 1; /* 幅を均等に分ける */
   display: block;
-  padding: 10px 15px;
+  padding: 5px 10px; /* 上下パディングを13pxに */
   background-color: #007bff;
   color: white;
   text-align: center;
@@ -25,7 +25,7 @@
   cursor: pointer;
   font-weight: bold;
   border: none;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .file-upload-label:hover, .filter-button:hover {

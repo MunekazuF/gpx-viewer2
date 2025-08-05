@@ -10,13 +10,17 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
   },
+  "homepage": "https://MunekazuF.github.io/gpx-viewer2",
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "chart.js": "^4.5.0",
+    "gh-pages": "^6.3.0",
     "idb": "^8.0.3",
     "leaflet": "^1.9.4",
     "leaflet-touch-helper": "^2.0.0",
