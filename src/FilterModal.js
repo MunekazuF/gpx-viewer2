@@ -26,7 +26,7 @@ const FilterModal = ({ currentFilter, onApplyFilter, onClose, mapBounds }) => {
     setStartDate('');
     setEndDate('');
     setUseMapBounds(false);
-    onApplyFilter({ keyword: '', startDate: '', endDate: '', useMapBounds: false, mapBounds: null });
+    onApplyFilter({ keyword: '', startDate: '', endDate: '', useMapBounds: false, mapBounds: null, isClear: true });
     onClose();
   };
 

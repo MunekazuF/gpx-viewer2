@@ -113,12 +113,12 @@ const useGpx = (mapBounds) => {
     setInfoOverlayVisible(false);
   };
 
-  const resetSelection = () => {
+  const resetSelection = useCallback(() => {
     setGpxTracks(prev => prev.map(track => ({ ...track, isVisible: false, points: null })));
     setInfoOverlayVisible(false);
     _setFocusedGpxId(null);
     setFocusedGpxData(null);
-  };
+  }, []);
 
   const deleteSelectedGpx = async () => {
     const selectedIds = gpxTracks.filter(track => track.isVisible).map(track => track.id);
@@ -137,33 +137,45 @@ const useGpx = (mapBounds) => {
   const applyFilter = useCallback(async (filters) => {
     setCurrentFilter(filters);
 
-    // メモリ上の軽量なメタデータのみでフィルタリング
-    const filtered = filterGpxFiles(gpxTracks, filters);
+    // フィルター条件がクリアされた場合はリセットを実行
+    if (filters.isClear) {
+      resetSelection();
+      return;
+    }
+
+    // フィルター条件がデフォルトの場合は何もしない
+    const isDefaultFilter = !filters.keyword && !filters.startDate && !filters.endDate && !filters.useMapBounds;
+    if (isDefaultFilter) {
+      return;
+    }
+
+    // 1. 適用前にすべての選択を解除
+    const deselectedTracks = gpxTracks.map(track => 
+      track.isVisible ? { ...track, isVisible: false, points: null } : track
+    );
+
+    // 2. メモリ上の軽量なメタデータでフィルタリング
+    const filtered = filterGpxFiles(deselectedTracks, filters);
     const filteredIds = filtered.map(track => track.id);
 
-    // フィルター結果をisVisibleフラグに反映
-    const newGpxTracks = gpxTracks.map(track => {
+    // 3. 上位20件を選択状態にする
+    const tracksWithNewVisibility = deselectedTracks.map(track => {
       const isFiltered = filteredIds.includes(track.id);
-      // 20件の上限を維持しつつ、表示状態を更新
       const shouldBeVisible = isFiltered && filteredIds.indexOf(track.id) < 20;
-      
-      // isVisibleが変更される可能性のあるトラックのみを更新
-      if (track.isVisible !== shouldBeVisible) {
-        return { ...track, isVisible: shouldBeVisible, points: null }; // 表示時にpointsは再取得
-      }
-      return track;
+      return { ...track, isVisible: shouldBeVisible };
     });
 
-    // 実際に表示されるトラックの完全なデータを非同期で読み込む
-    const tracksToLoad = newGpxTracks.filter(t => t.isVisible && !t.points);
+    // 4. 表示が必要なトラックの完全なデータを読み込む
+    const tracksToLoad = tracksWithNewVisibility.filter(t => t.isVisible && !t.points);
     if (tracksToLoad.length > 0) {
-      const loadedTracks = await Promise.all(
+      const loadedTracksData = await Promise.all(
         tracksToLoad.map(t => getGpxDataById(t.id))
       );
       
+      // 読み込んだデータで状態を更新
       setGpxTracks(currentTracks => {
-        const updatedTracks = [...currentTracks];
-        loadedTracks.forEach(loadedTrack => {
+        const updatedTracks = [...tracksWithNewVisibility];
+        loadedTracksData.forEach(loadedTrack => {
           const index = updatedTracks.findIndex(t => t.id === loadedTrack.id);
           if (index !== -1) {
             updatedTracks[index] = { ...loadedTrack, isVisible: true };
@@ -172,16 +184,26 @@ const useGpx = (mapBounds) => {
         return updatedTracks;
       });
     } else {
-      setGpxTracks(newGpxTracks);
+      // 表示するトラックがない場合でも、非表示の状態を反映
+      setGpxTracks(tracksWithNewVisibility);
     }
-  }, [gpxTracks]);
+  }, [gpxTracks, resetSelection]);
+
+  const sidebarTracks = useMemo(() => {
+    const isFilterActive = currentFilter.keyword || currentFilter.startDate || currentFilter.endDate || currentFilter.useMapBounds;
+    if (!isFilterActive) {
+      return gpxTracks; // フィルターがなければ全件
+    }
+    // フィルターがあれば、フィルターにマッチしたものだけを返す
+    return filterGpxFiles(gpxTracks, currentFilter);
+  }, [gpxTracks, currentFilter]);
 
   const visibleGpxTracks = useMemo(() => {
     return gpxTracks.filter(t => t.isVisible && t.points);
   }, [gpxTracks]);
 
   return {
-    gpxTracks: gpxTracks, // 全てのトラックを返す
+    gpxTracks: sidebarTracks, // サイドバー表示用
     visibleGpxTracks,
     focusedGpxData,
     isInfoOverlayVisible,
