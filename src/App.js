@@ -5,6 +5,7 @@ import ElevationGraph from './ElevationGraph';
 import Map from './components/Map';
 import GpxInfoOverlay from './GpxInfoOverlay';
 import FilterModal from './FilterModal';
+import SettingsModal from './components/SettingsModal'; // SettingsModalをインポート
 import useUI from './hooks/useUI';
 import useGpx from './hooks/useGpx';
 import useMap from './hooks/useMap';
@@ -32,6 +33,13 @@ function App() {
 
   const [graphSizeMode, setGraphSizeMode] = useState('normal');
   const verticalSplitRef = useRef(null);
+  const [isSettingsModalOpen, setSettingsModalOpen] = useState(false); // 設定モーダルのstate
+  const [settingsChanged, setSettingsChanged] = useState(false); // 設定変更を通知するstate
+
+  const handleCloseSettingsModal = () => {
+    setSettingsModalOpen(false);
+    setSettingsChanged(prev => !prev); // stateを反転させて子コンポーネントに通知
+  };
 
   const toggleGraphSizeMode = useCallback(() => {
     setGraphSizeMode(currentMode => {
@@ -110,13 +118,16 @@ function App() {
       {isFilterModalOpen && (
         <FilterModal currentFilter={filter} onApplyFilter={setFilter} onClose={toggleFilterModal} mapBounds={mapBounds} />
       )}
+      {isSettingsModalOpen && (
+        <SettingsModal isOpen={isSettingsModalOpen} onClose={handleCloseSettingsModal} />
+      )}
       {isMobile && (
         <button className="hamburger-menu" onClick={toggleSidebar}>
           {isSidebarOpen ? <>&times;</> : <>&equiv;</>}
         </button>
       )}
       <div id="sidebar" className={sidebarClasses}>
-        <Sidebar gpxTracks={gpxTracks} onFileAdd={addGpxFiles} onToggleVisibility={toggleGpxVisibility} onFocusGpx={setFocusedGpxId} focusedGpxId={focusedGpxId} onToggleFilterModal={toggleFilterModal} onResetSelection={resetSelection} onDeleteSelected={deleteSelectedGpx} mapBounds={mapBounds} />
+        <Sidebar gpxTracks={gpxTracks} onFileAdd={addGpxFiles} onToggleVisibility={toggleGpxVisibility} onFocusGpx={setFocusedGpxId} focusedGpxId={focusedGpxId} onToggleFilterModal={toggleFilterModal} onResetSelection={resetSelection} onDeleteSelected={deleteSelectedGpx} mapBounds={mapBounds} onOpenSettings={() => setSettingsModalOpen(true)} />
       </div>
       {!isMobile && <div className="gutter gutter-horizontal"></div>}
       <div id="main-area" className={isMobile ? 'main-area-mobile' : 'split'}>
@@ -134,7 +145,7 @@ function App() {
             </div>
             {mobileView === 'map' && (
               <div id="map-area" className="map-area-mobile">
-                <Map gpxData={visibleGpxTracks} focusedGpxData={focusedGpxData} hoveredPoint={hoveredPoint} onBoundsChange={onBoundsChange} onTrackClick={setFocusedGpxId} />
+                <Map gpxData={visibleGpxTracks} focusedGpxData={focusedGpxData} hoveredPoint={hoveredPoint} onBoundsChange={onBoundsChange} onTrackClick={setFocusedGpxId} settingsChanged={settingsChanged} />
               </div>
             )}
             {mobileView === 'graph' && (
@@ -146,7 +157,7 @@ function App() {
         ) : (
           <>
             <div id="map-area" className="split-vertical" style={getMapAreaStyle()}>
-              <Map gpxData={visibleGpxTracks} focusedGpxData={focusedGpxData} hoveredPoint={hoveredPoint} onBoundsChange={onBoundsChange} onTrackClick={setFocusedGpxId} />
+              <Map gpxData={visibleGpxTracks} focusedGpxData={focusedGpxData} hoveredPoint={hoveredPoint} onBoundsChange={onBoundsChange} onTrackClick={setFocusedGpxId} settingsChanged={settingsChanged} />
             </div>
             <div id="graph-area" className="split-vertical" style={getGraphAreaStyle()}>
               <ElevationGraph gpxData={visibleGpxTracks} onPointHover={setHoveredPoint} focusedGpxData={focusedGpxData} key={graphSizeMode} />

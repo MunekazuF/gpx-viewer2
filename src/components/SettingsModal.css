@@ -1,0 +1,85 @@
+.settings-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000; /* 他の要素より手前に */
+}
+
+.settings-modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  min-width: 300px;
+  max-width: 90%;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.settings-modal-content h2 {
+  margin-top: 0;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+.settings-modal-content button {
+  margin-top: 20px;
+  padding: 8px 15px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.settings-modal-content button:hover {
+  background-color: #0056b3;
+}
+
+.clear-data-button {
+  background-color: #dc3545;
+}
+
+.clear-data-button:hover {
+  background-color: #c82333;
+}
+
+.settings-section {
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.settings-section:last-of-type {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* ラベルとセレクトボックスの間隔 */
+  margin-bottom: 10px;
+}
+
+.setting-item label {
+  flex-shrink: 0; /* 縮まないように */
+  margin-bottom: 0; /* 親要素でflexを使うので不要 */
+}
+
+.setting-item select {
+  flex-grow: 1; /* 残りのスペースを埋める */
+  width: auto; /* flex-growと併用 */
+}
+
+.setting-description {
+  font-size: 0.8em;
+  color: #666;
+  margin-top: 5px;
+}

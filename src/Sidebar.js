@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './Sidebar.css';
 
-const Sidebar = ({ gpxTracks, onFileAdd, onToggleVisibility, onFocusGpx, focusedGpxId, onToggleFilterModal, onResetSelection, onDeleteSelected }) => {
+const Sidebar = ({ gpxTracks, onFileAdd, onToggleVisibility, onFocusGpx, focusedGpxId, onToggleFilterModal, onResetSelection, onDeleteSelected, onOpenSettings }) => {
   const [isDragging, setIsDragging] = useState(false);
 
   const handleFileChange = (e) => {
@@ -104,6 +104,9 @@ const Sidebar = ({ gpxTracks, onFileAdd, onToggleVisibility, onFocusGpx, focused
         }} className="delete-button">
           削除
         </button>
+        <div className="version-info" onClick={onOpenSettings}>
+          Version: {process.env.REACT_APP_VERSION}
+        </div>
       </div>
       {isDragging && (
         <div className="drag-overlay">

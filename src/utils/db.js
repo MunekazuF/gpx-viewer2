@@ -61,3 +61,11 @@ export const deleteGpxDataByIds = async (ids) => {
   await Promise.all(ids.map(id => tx.store.delete(id)));
   await tx.done;
 };
+
+/**
+ * IndexedDBのすべてのGPXデータを削除する
+ */
+export const clearAllGpxData = async () => {
+  const db = await initDB();
+  await db.clear(STORE_NAME);
+};

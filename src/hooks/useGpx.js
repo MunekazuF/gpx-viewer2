@@ -22,13 +22,19 @@ const useGpx = (mapBounds) => {
   useEffect(() => {
     const loadMetadata = async () => {
       const metadata = await getAllGpxMetadata();
-      const tracks = metadata.map(meta => ({
+      const sortedTracks = metadata.map(meta => ({
         ...meta,
         isVisible: false,
         points: null,
         color: meta.color || generateColor() // DBに色がなければ生成
-      }));
-      setGpxTracks(tracks);
+      })).sort((a, b) => {
+        // timeがnullの場合はソートの最後に持ってくる
+        if (!a.time && !b.time) return 0;
+        if (!a.time) return 1;
+        if (!b.time) return -1;
+        return b.time.getTime() - a.time.getTime(); // 降順
+      });
+      setGpxTracks(sortedTracks);
     };
     loadMetadata();
   }, []);
@@ -46,7 +52,15 @@ const useGpx = (mapBounds) => {
           const newTrack = { id: Date.now() + file.name, fileName: file.name, ...parsedData, color };
           await saveGpxData(newTrack);
           const { points, ...metadata } = newTrack;
-          setGpxTracks(prev => [...prev, { ...metadata, isVisible: false, points: null }]);
+          setGpxTracks(prev => {
+            const newGpxList = [...prev, { ...metadata, isVisible: false, points: null }];
+            return newGpxList.sort((a, b) => {
+              if (!a.time && !b.time) return 0;
+              if (!a.time) return 1;
+              if (!b.time) return -1;
+              return b.time.getTime() - a.time.getTime(); // 降順
+            });
+          });
         } catch (error) { console.error("GPX解析/保存エラー:", error); }
       };
       reader.readAsText(file);

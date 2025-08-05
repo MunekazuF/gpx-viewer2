@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
+import { getCookie } from '../utils/cookie';
 
 // --- Leafletのデフォルトアイコン問題を修正 ---
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -23,13 +24,18 @@ const startIcon = createColoredIcon('start-marker-icon');
 const endIcon = createColoredIcon('end-marker-icon');
 
 
-const StartEndMarkers = ({ gpxData }) => {
+const StartEndMarkers = ({ gpxData, settingsChanged }) => {
   const map = useMap();
   const [currentZoom, setCurrentZoom] = useState(map.getZoom());
+  const [zoomThreshold, setZoomThreshold] = useState(() => {
+    const savedThreshold = getCookie('zoomThreshold');
+    return savedThreshold ? parseInt(savedThreshold, 10) : 12; // デフォルト値は12
+  });
 
   useEffect(() => {
     const handleZoom = () => {
-      setCurrentZoom(map.getZoom());
+      const newZoom = map.getZoom();
+      setCurrentZoom(newZoom);
     };
 
     map.on('zoomend', handleZoom);
@@ -39,7 +45,13 @@ const StartEndMarkers = ({ gpxData }) => {
     };
   }, [map]);
 
-  if (currentZoom <= 14) {
+  useEffect(() => {
+    const savedThreshold = getCookie('zoomThreshold');
+    const newThreshold = savedThreshold ? parseInt(savedThreshold, 10) : 12;
+    setZoomThreshold(newThreshold);
+  }, [settingsChanged]);
+
+  if (currentZoom <= zoomThreshold) {
     return null;
   }
 

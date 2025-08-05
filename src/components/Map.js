@@ -72,7 +72,7 @@ const TouchHelperInitializer = () => {
 };
 
 
-const Map = ({ gpxData, focusedGpxData, hoveredPoint, onBoundsChange, onTrackClick }) => {
+const Map = ({ gpxData, focusedGpxData, hoveredPoint, onBoundsChange, onTrackClick, settingsChanged }) => {
   // 初期表示位置を東京駅に設定
   const position = [35.681236, 139.767125];
   const gpxList = gpxData || [];
@@ -143,7 +143,7 @@ const Map = ({ gpxData, focusedGpxData, hoveredPoint, onBoundsChange, onTrackCli
       
       <MapEvents onBoundsChange={onBoundsChange} onBaseLayerChange={handleBaseLayerChange} />
       <MapController gpxData={gpxData} focusedGpxData={focusedGpxData} />
-      <StartEndMarkers gpxData={gpxList} />
+      <StartEndMarkers gpxData={gpxList} settingsChanged={settingsChanged} />
       <TouchHelperInitializer />
 
     </MapContainer>
