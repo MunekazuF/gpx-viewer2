@@ -22,6 +22,8 @@ ChartJS.register(
   Legend
 );
 
+const formatNumber = (num) => new Intl.NumberFormat('ja-JP').format(num);
+
 // (中略: crosshairPluginは変更なし)
 const crosshairPlugin = {
   id: 'crosshair',
@@ -408,7 +410,7 @@ const ElevationGraph = ({ gpxData, onPointHover, focusedGpxData }) => {
         </button>
         {isMergeMode && graphMode === 'gain' && (
           <span className="total-gain-display">
-            合計: {Math.round(totalMergedGain)} m
+            獲得標高: {formatNumber(Math.round(totalMergedGain))} m 総移動距離: {formatNumber((chartData.mergedPoints[chartData.mergedPoints.length - 1]?.x || 0).toFixed(2))} km
           </span>
         )}
         <label className="merge-mode-checkbox">

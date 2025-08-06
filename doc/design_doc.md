@@ -82,9 +82,11 @@ GPXファイルをアップロードし、内容を解析、地図上に軌跡�
     -   OpenStreetMapをデフォルトの地図として使用する。
 -   **タイル切り替え:**
     -   以下のベースマップを切り替える機能を追加する。
-        -   OpenStreetMap (標準)
+                -   OpenStreetMap (標準)
         -   OpenStreetMap Japan
         -   国土地理院
+        -   OpenTopoMap
+        -   Esri WorldTopoMap
     -   最後に選択したタイルを`Cookie`に保存し、次回起動時はそのタイルが表示されるようにする。
 -   **軌跡表示:**
     -   GPXデータの軌跡を地図上にポリラインとして表示する。
