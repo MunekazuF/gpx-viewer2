@@ -3,11 +3,22 @@ import { parseGpx } from '../utils/gpxParser';
 import { saveGpxData, getAllGpxMetadata, getGpxDataById, deleteGpxDataByIds } from '../utils/db';
 import { filterGpxFiles } from '../utils/gpxFilter';
 
+/**
+ * GPXデータ管理のためのReact Context
+ */
 const GpxContext = createContext();
 
+/**
+ * GpxContextにアクセスするためのカスタムフック
+ * @returns {object} GPXコンテキストの値
+ */
 export const useGpxContext = () => useContext(GpxContext);
 
-// 緑色を避けつつ、ランダムで鮮やかな色を生成する
+/**
+ * GPXトラックに割り当てるためのランダムで鮮やかな色を生成します。
+ * 地図上で見やすいように、緑色の範囲（HUE: 80-160）は避けます。
+ * @returns {string} HSL形式のカラーコード (e.g., "hsl(240, 90%, 50%)")
+ */
 const generateColor = () => {
   let hue;
   do {
@@ -16,6 +27,12 @@ const generateColor = () => {
   return `hsl(${hue}, 90%, 50%)`;
 };
 
+/**
+ * GPXデータの状態と操作を提供するコンポーネント。
+ * このProvider内で、GPXファイルの追加、表示切替、フィルタリング、削除などのロジックを管理します。
+ * @param {object} props - コンポーネントのプロパティ
+ * @param {React.ReactNode} props.children - 子コンポーネント
+ */
 export const GpxProvider = ({ children }) => {
   const [gpxTracks, setGpxTracks] = useState([]); // 全てのGPXメタデータと表示状態
   const [focusedGpxId, _setFocusedGpxId] = useState(null);
@@ -23,6 +40,7 @@ export const GpxProvider = ({ children }) => {
   const [isInfoOverlayVisible, setInfoOverlayVisible] = useState(false);
   const [currentFilter, setCurrentFilter] = useState({ keyword: '', startDate: '', endDate: '', useMapBounds: false, mapBounds: null });
 
+  // 初期化時にIndexedDBからGPXメタデータをロード
   useEffect(() => {
     const loadMetadata = async () => {
       const metadata = await getAllGpxMetadata();
@@ -35,13 +53,17 @@ export const GpxProvider = ({ children }) => {
         if (!a.time && !b.time) return 0;
         if (!a.time) return 1;
         if (!b.time) return -1;
-        return b.time.getTime() - a.time.getTime(); // 降順
+        return b.time.getTime() - a.time.getTime(); // 日付の降順でソート
       });
       setGpxTracks(sortedTracks);
     };
     loadMetadata();
   }, []);
 
+  /**
+   * 複数のGPXファイルを追加し、パースしてDBに保存後、stateを更新します。
+   * @param {FileList} files - ユーザーが選択したファイルのリスト
+   */
   const addGpxFiles = (files) => {
     const newFiles = Array.from(files).filter(file => !gpxTracks.some(track => track.fileName === file.name));
     if (newFiles.length === 0) return;
@@ -70,6 +92,11 @@ export const GpxProvider = ({ children }) => {
     });
   };
 
+  /**
+   * 指定されたIDのGPXトラックの表示/非表示を切り替えます。
+   * 表示する場合はDBから完全なポイントデータを読み込みます。
+   * @param {string} id - トグルするGPXトラックのID
+   */
   const toggleGpxVisibility = async (id) => {
     const targetTrack = gpxTracks.find(track => track.id === id);
     if (!targetTrack) return;
@@ -84,8 +111,14 @@ export const GpxProvider = ({ children }) => {
     }
   };
 
+  /**
+   * 指定されたIDのGPXトラックにフォーカスします。
+   * フォーカスされたトラックは強調表示され、情報オーバーレイが表示されます。
+   * @param {string | null} id - フォーカスするGPXトラックのID。nullでフォーカス解除。
+   */
   const setFocusedGpxId = (id) => {
     if (id && id === focusedGpxId) {
+      // すでにフォーカスされているトラックをクリックした場合、情報オーバーレイの表示を切り替える
       setInfoOverlayVisible(prev => !prev);
       setFocusedGpxData(null);
       requestAnimationFrame(async () => {
@@ -97,6 +130,7 @@ export const GpxProvider = ({ children }) => {
       _setFocusedGpxId(null);
       setFocusedGpxData(null);
       if (id) {
+        // 新しいトラックにフォーカス
         requestAnimationFrame(async () => {
           const fullData = await getGpxDataById(id);
           setFocusedGpxData(fullData);
@@ -104,15 +138,22 @@ export const GpxProvider = ({ children }) => {
           setInfoOverlayVisible(true);
         });
       } else {
+        // フォーカス解除
         setInfoOverlayVisible(false);
       }
     }
   };
 
+  /**
+   * GPX情報オーバーレイを非表示にします。
+   */
   const hideInfoOverlay = () => {
     setInfoOverlayVisible(false);
   };
 
+  /**
+   * 全てのGPXトラックの表示状態とフォーカスをリセットします。
+   */
   const resetSelection = useCallback(() => {
     setGpxTracks(prev => prev.map(track => ({ ...track, isVisible: false, points: null })));
     setInfoOverlayVisible(false);
@@ -120,6 +161,9 @@ export const GpxProvider = ({ children }) => {
     setFocusedGpxData(null);
   }, []);
 
+  /**
+   * 現在表示されている（選択されている）GPXトラックを削除します。
+   */
   const deleteSelectedGpx = async () => {
     const selectedIds = gpxTracks.filter(track => track.isVisible).map(track => track.id);
     if (selectedIds.length === 0) return;
@@ -133,6 +177,10 @@ export const GpxProvider = ({ children }) => {
     }
   };
 
+  /**
+   * フィルター条件を適用し、GPXトラックの表示状態を更新します。
+   * @param {object} filters - 適用するフィルター条件
+   */
   const applyFilter = useCallback(async (filters) => {
     setCurrentFilter(filters);
 
@@ -155,7 +203,7 @@ export const GpxProvider = ({ children }) => {
 
     const tracksWithNewVisibility = deselectedTracks.map(track => {
       const isFiltered = filteredIds.includes(track.id);
-      const shouldBeVisible = isFiltered && filteredIds.indexOf(track.id) < 20;
+      const shouldBeVisible = isFiltered && filteredIds.indexOf(track.id) < 20; // 表示上限20件
       return { ...track, isVisible: shouldBeVisible };
     });
 
@@ -180,6 +228,9 @@ export const GpxProvider = ({ children }) => {
     }
   }, [gpxTracks, resetSelection]);
 
+  /**
+   * サイドバーに表示するためのフィルタリングされたGPXトラックのリスト
+   */
   const sidebarTracks = useMemo(() => {
     const isFilterActive = currentFilter.keyword || currentFilter.startDate || currentFilter.endDate || currentFilter.useMapBounds;
     if (!isFilterActive) {
@@ -188,10 +239,14 @@ export const GpxProvider = ({ children }) => {
     return filterGpxFiles(gpxTracks, currentFilter);
   }, [gpxTracks, currentFilter]);
 
+  /**
+   * 地図上に表示するためのGPXトラックのリスト（表示状態でフィルタリング済み）
+   */
   const visibleGpxTracks = useMemo(() => {
     return gpxTracks.filter(t => t.isVisible && t.points);
   }, [gpxTracks]);
 
+  // コンテキストとして提供する値
   const value = {
     gpxTracks: sidebarTracks,
     visibleGpxTracks,

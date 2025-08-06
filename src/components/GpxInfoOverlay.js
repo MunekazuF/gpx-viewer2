@@ -2,6 +2,10 @@ import React from 'react';
 import { useGpxContext } from '../contexts/GpxContext';
 import './GpxInfoOverlay.css';
 
+/**
+ * GPX情報オーバーレイコンポーネント
+ * フォーカスされたGPXトラックの詳細情報を表示します。
+ */
 const GpxInfoOverlay = () => {
   const { focusedGpxData, hideInfoOverlay } = useGpxContext();
 
@@ -9,7 +13,11 @@ const GpxInfoOverlay = () => {
     return null;
   }
 
-  // 詳細情報を計算
+  /**
+   * GPXポイントから統計情報を計算します。
+   * @param {Array<object>} points - GPXトラックのポイント配列
+   * @returns {object} - 計算された統計情報（総距離、獲得標高、最高標高、最低標高）
+   */
   const calculateStats = (points) => {
     let totalDistance = 0;
     let elevationGain = 0;
@@ -34,8 +42,23 @@ const GpxInfoOverlay = () => {
 
   const stats = calculateStats(focusedGpxData.points);
 
+  /**
+   * 日付をフォーマットする
+   * @param {Date} date - フォーマットする日付
+   * @returns {string} - フォーマットされた日付文字列
+   */
   const formatDate = (date) => date ? new Intl.DateTimeFormat('ja-JP').format(date) : 'N/A';
+  /**
+   * 時刻をフォーマットする
+   * @param {Date} date - フォーマットする時刻
+   * @returns {string} - フォーマットされた時刻文字列
+   */
   const formatTime = (date) => date ? new Intl.DateTimeFormat('ja-JP', { hour: '2-digit', minute: '2-digit' }).format(date) : 'N/A';
+    /**
+   * 数値をフォーマットする
+   * @param {number} num - フォーマットする数値
+   * @returns {string} - フォーマットされた数値文字列
+   */
   const formatNumber = (num) => new Intl.NumberFormat('ja-JP').format(num);
 
   return (

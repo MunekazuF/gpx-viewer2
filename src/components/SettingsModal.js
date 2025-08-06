@@ -3,28 +3,42 @@ import { clearAllGpxData } from '../utils/db';
 import { getCookie, setCookie } from '../utils/cookie';
 import './SettingsModal.css';
 
+/**
+ * 設定モーダルコンポーネント
+ * @param {object} props - コンポーネントのプロパティ
+ * @param {boolean} props.isOpen - モーダルが開いているかどうか
+ * @param {function} props.onClose - モーダルを閉じるための関数
+ */
 const SettingsModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
-  const DEFAULT_ZOOM_THRESHOLD = 12; // 設計書に記載のデフォルト値
+  const DEFAULT_ZOOM_THRESHOLD = 12; // マーカー表示のデフォルトズーム閾値
   const [zoomThreshold, setZoomThreshold] = useState(() => {
     const savedThreshold = getCookie('zoomThreshold');
     return savedThreshold ? parseInt(savedThreshold, 10) : DEFAULT_ZOOM_THRESHOLD;
   });
 
+  /**
+   * 全てのGPXデータを削除するハンドラー
+   */
   const handleClearAllData = () => {
     if (window.confirm('全てのデータを削除します。よろしいですか？')) {
       clearAllGpxData();
-      window.location.reload(); // ページをリロード
+      window.location.reload(); // ページをリロードして変更を反映
     }
   };
 
+  /**
+   * ズーム閾値を変更するハンドラー
+   * @param {object} e - イベントオブジェクト
+   */
   const handleZoomThresholdChange = (e) => {
     const newThreshold = parseInt(e.target.value, 10);
     setZoomThreshold(newThreshold);
     setCookie('zoomThreshold', newThreshold.toString(), 365);
   };
 
+  // ズームレベルの選択肢を生成
   const zoomOptions = [];
   for (let i = 0; i <= 18; i++) {
     zoomOptions.push(<option key={i} value={i}>{i}</option>);

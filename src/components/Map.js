@@ -21,9 +21,16 @@ L.Icon.Default.mergeOptions({
 });
 // --- 修正ここまで ---
 
+/**
+ * 地図コンポーネント
+ * @param {object} props - コンポーネントのプロパティ
+ * @param {object} props.hoveredPoint - 標高グラフでホバーされているポイント
+ * @param {function} props.onBoundsChange - 地図の表示範囲が変更されたときのコールバック
+ * @param {boolean} props.settingsChanged - 設定が変更されたかどうか
+ */
 const Map = ({ hoveredPoint, onBoundsChange, settingsChanged }) => {
   const { visibleGpxTracks, focusedGpxData, setFocusedGpxId } = useGpxContext();
-  const position = [35.681236, 139.767125];
+  const position = [35.681236, 139.767125]; // 初期表示位置（東京駅）
   const gpxList = visibleGpxTracks || [];
 
   const mapRef = useRef();
@@ -31,6 +38,7 @@ const Map = ({ hoveredPoint, onBoundsChange, settingsChanged }) => {
     return getCookie('mapTile') || 'OpenStreetMap';
   });
 
+  // コンポーネントのマウントとアンマウント時に地図のサイズを再描画
   useEffect(() => {
     const timer = setTimeout(() => {
       if (mapRef.current) {
@@ -41,6 +49,10 @@ const Map = ({ hoveredPoint, onBoundsChange, settingsChanged }) => {
     return () => clearTimeout(timer);
   }, []);
 
+  /**
+   * ベースレイヤー（タイル）が変更されたときのハンドラー
+   * @param {object} e - イベントオブジェクト
+   */
   const handleBaseLayerChange = (e) => {
     const newTileName = e.name;
     setSelectedTile(newTileName);

@@ -9,7 +9,11 @@ import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
-// --- カスタムアイコンの定義 ---
+/**
+ * カスタムカラーのLeafletアイコンを作成します。
+ * @param {string} className - アイコンに適用するCSSクラス名
+ * @returns {L.Icon} - LeafletのIconオブジェクト
+ */
 const createColoredIcon = (className) => {
   return new L.Icon({
     ...L.Icon.Default.prototype.options,
@@ -20,10 +24,17 @@ const createColoredIcon = (className) => {
   });
 };
 
+// 始点・終点用のアイコンを定義
 const startIcon = createColoredIcon('start-marker-icon');
 const endIcon = createColoredIcon('end-marker-icon');
 
 
+/**
+ * GPXトラックの始点と終点にマーカーを表示するコンポーネント
+ * @param {object} props - コンポーネントのプロパティ
+ * @param {Array<object>} props.gpxData - 表示対象のGPXデータ配列
+ * @param {boolean} props.settingsChanged - 設定変更を検知するためのフラグ
+ */
 const StartEndMarkers = ({ gpxData, settingsChanged }) => {
   const map = useMap();
   const [currentZoom, setCurrentZoom] = useState(map.getZoom());
@@ -32,6 +43,7 @@ const StartEndMarkers = ({ gpxData, settingsChanged }) => {
     return savedThreshold ? parseInt(savedThreshold, 10) : 12; // デフォルト値は12
   });
 
+  // 地図のズームレベルを監視
   useEffect(() => {
     const handleZoom = () => {
       const newZoom = map.getZoom();
@@ -45,12 +57,14 @@ const StartEndMarkers = ({ gpxData, settingsChanged }) => {
     };
   }, [map]);
 
+  // 設定が変更されたらズーム閾値を更新
   useEffect(() => {
     const savedThreshold = getCookie('zoomThreshold');
     const newThreshold = savedThreshold ? parseInt(savedThreshold, 10) : 12;
     setZoomThreshold(newThreshold);
   }, [settingsChanged]);
 
+  // 現在のズームレベルが閾値以下ならマーカーを表示しない
   if (currentZoom <= zoomThreshold) {
     return null;
   }

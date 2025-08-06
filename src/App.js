@@ -11,8 +11,14 @@ import { useGpxContext } from './contexts/GpxContext';
 import useMap from './hooks/useMap';
 import './App.css';
 
+/**
+ * アプリケーションのメインコンポーネント
+ * 全体のレイアウトとコンポーネント間の連携を管理します。
+ */
 function App() {
+  // 標高グラフ上でホバーされたポイントの状態
   const [hoveredPoint, setHoveredPoint] = useState(null);
+  // UI関連のカスタムフック
   const { 
     isMobile, isTablet, isSidebarOpen, toggleSidebar, 
     isSidebarCollapsed, toggleSidebarCollapse, 
@@ -22,18 +28,27 @@ function App() {
     isSettingsModalOpen, toggleSettingsModal,
     getGraphAreaStyle, getMapAreaStyle, getGraphButtonIcon
   } = useUI();
+  // 地図関連のカスタムフック
   const { mapBounds, onBoundsChange } = useMap();
+  // GPXコンテキストから情報を取得
   const { isInfoOverlayVisible } = useGpxContext();
+  // 設定変更を子コンポーネントに通知するための状態
   const [settingsChanged, setSettingsChanged] = useState(false);
 
+  // Split.jsのインスタンスを保持するためのref
   const horizontalSplitRef = useRef(null);
   const verticalSplitRef = useRef(null);
 
+  /**
+   * 設定モーダルを閉じるハンドラー
+   * 設定が変更された可能性があるため、settingsChangedフラグを更新します。
+   */
   const handleCloseSettingsModal = () => {
     toggleSettingsModal();
     setSettingsChanged(prev => !prev);
   };
 
+  // グローバルなドラッグ＆ドロップのデフォルト動作を無効化
   useEffect(() => {
     const preventDefault = (e) => e.preventDefault();
     window.addEventListener('dragover', preventDefault, false);
@@ -44,6 +59,7 @@ function App() {
     };
   }, []);
 
+  // 水平方向の分割レイアウト（サイドバーとメインエリア）を管理
   useEffect(() => {
     if (isMobile) {
       if (horizontalSplitRef.current) {
@@ -68,6 +84,7 @@ function App() {
     };
   }, [isMobile, isTablet]);
 
+  // 垂直方向の分割レイアウト（地図とグラフ）を管理
   useEffect(() => {
     if (isMobile) {
         if (verticalSplitRef.current) {
@@ -95,6 +112,7 @@ function App() {
 }, [isMobile, graphSizeMode]);
 
 
+  // サイドバーの表示／非表示状態に応じてレイアウトを調整
   useEffect(() => {
     if (!isMobile && horizontalSplitRef.current) {
       const sidebarSize = isTablet ? 30 : 15;
@@ -106,26 +124,34 @@ function App() {
 
   return (
     <div className="app-container">
+      {/* モーダル表示 */}
       {isFilterModalOpen && (
         <FilterModal onClose={toggleFilterModal} mapBounds={mapBounds} />
       )}
       {isSettingsModalOpen && (
         <SettingsModal isOpen={isSettingsModalOpen} onClose={handleCloseSettingsModal} />
       )}
+
+      {/* モバイル用のUI要素 */}
       {isMobile && (
         <button className="hamburger-menu" onClick={toggleSidebar}>
           {isSidebarOpen ? <>&times;</> : <>&equiv;</>}
         </button>
       )}
+      {/* デスクトップ／タブレット用のサイドバー展開ボタン */}
       {!isMobile && isSidebarCollapsed && (
         <button className="sidebar-expand-button" onClick={toggleSidebarCollapse}>
           &gt;
         </button>
       )}
+
+      {/* サイドバー */}
       <div id="sidebar" className={sidebarClasses}>
         <Sidebar onToggleFilterModal={toggleFilterModal} mapBounds={mapBounds} onOpenSettings={toggleSettingsModal} onCollapse={toggleSidebarCollapse} />
       </div>
       {!isMobile && <div className="gutter gutter-horizontal"></div>}
+      
+      {/* メインエリア */}
       <div id="main-area" className={isMobile ? 'main-area-mobile' : 'split'}>
         {isInfoOverlayVisible && <GpxInfoOverlay />}
         {!isMobile && (
@@ -133,6 +159,8 @@ function App() {
             {getGraphButtonIcon()}
           </button>
         )}
+
+        {/* モバイル表示とデスクトップ表示の切り替え */}
         {isMobile ? (
           <>
             <div className="view-toggle">

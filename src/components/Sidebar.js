@@ -2,6 +2,14 @@ import React, { useState } from 'react';
 import { useGpxContext } from '../contexts/GpxContext';
 import './Sidebar.css';
 
+/**
+ * サイドバーコンポーネント
+ * GPXファイルのアップロード、リスト表示、フィルター、設定のトリガーなどを担当します。
+ * @param {object} props - コンポーネントのプロパティ
+ * @param {function} props.onToggleFilterModal - フィルターモーダル表示切替用の関数
+ * @param {function} props.onOpenSettings - 設定モーダル表示用の関数
+ * @param {function} props.onCollapse - サイドバーを折りたたむための関数
+ */
 const Sidebar = ({ onToggleFilterModal, onOpenSettings, onCollapse }) => {
   const {
     gpxTracks,
@@ -15,30 +23,50 @@ const Sidebar = ({ onToggleFilterModal, onOpenSettings, onCollapse }) => {
 
   const [isDragging, setIsDragging] = useState(false);
 
+  /**
+   * ファイル入力が変更されたときのハンドラー
+   * @param {object} e - イベントオブジェクト
+   */
   const handleFileChange = (e) => {
     if (e.target.files) {
       addGpxFiles(e.target.files);
-      e.target.value = '';
+      e.target.value = ''; // 同じファイルを再度選択できるようにするため
     }
   };
 
+  /**
+   * ドラッグ要素がドロップターゲットに入ったときのハンドラー
+   * @param {object} e - イベントオブジェクト
+   */
   const handleDragEnter = (e) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
   };
 
+  /**
+   * ドラッグ要素がドロップターゲットから離れたときのハンドラー
+   * @param {object} e - イベントオブジェクト
+   */
   const handleDragLeave = (e) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
   };
 
+  /**
+   * ドラッグ要素がドロップターゲット上にあるときのハンドラー
+   * @param {object} e - イベントオブジェクト
+   */
   const handleDragOver = (e) => {
     e.preventDefault();
     e.stopPropagation();
   };
 
+  /**
+   * ファイルがドロップされたときのハンドラー
+   * @param {object} e - イベントオブジェクト
+   */
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -49,6 +77,11 @@ const Sidebar = ({ onToggleFilterModal, onOpenSettings, onCollapse }) => {
     }
   };
 
+  /**
+   * 日付を 'YYYY/MM/DD' 形式にフォーマットする
+   * @param {Date} date - フォーマットする日付オブジェクト
+   * @returns {string} - フォーマットされた日付文字列
+   */
   const formatDate = (date) => {
     if (!date) return '';
     const y = date.getFullYear();
@@ -97,7 +130,7 @@ const Sidebar = ({ onToggleFilterModal, onOpenSettings, onCollapse }) => {
               type="checkbox"
               checked={data.isVisible}
               onChange={(e) => {
-                e.stopPropagation();
+                e.stopPropagation(); // 親要素のonClickが発火しないようにする
                 toggleGpxVisibility(data.id);
               }}
             />

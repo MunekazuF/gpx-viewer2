@@ -2,6 +2,12 @@ import React, { useState } from 'react';
 import { useGpxContext } from '../contexts/GpxContext';
 import './FilterModal.css';
 
+/**
+ * フィルターモーダルコンポーネント
+ * @param {object} props - コンポーネントのプロパティ
+ * @param {function} props.onClose - モーダルを閉じるための関数
+ * @param {object} props.mapBounds - 現在の地図の表示範囲
+ */
 const FilterModal = ({ onClose, mapBounds }) => {
   const { filter: currentFilter, setFilter: onApplyFilter } = useGpxContext();
   const [keyword, setKeyword] = useState(currentFilter.keyword || '');
@@ -9,6 +15,9 @@ const FilterModal = ({ onClose, mapBounds }) => {
   const [endDate, setEndDate] = useState(currentFilter.endDate || '');
   const [useMapBounds, setUseMapBounds] = useState(currentFilter.useMapBounds || false);
 
+  /**
+   * フィルターを適用するハンドラー
+   */
   const handleApply = () => {
     let boundsToApply = null;
     if (useMapBounds && mapBounds && mapBounds._southWest && mapBounds._northEast) {
@@ -23,6 +32,9 @@ const FilterModal = ({ onClose, mapBounds }) => {
     onClose();
   };
 
+  /**
+   * フィルターをクリアするハンドラー
+   */
   const handleClear = () => {
     setKeyword('');
     setStartDate('');
