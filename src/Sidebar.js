@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './Sidebar.css';
 
-const Sidebar = ({ gpxTracks, onFileAdd, onToggleVisibility, onFocusGpx, focusedGpxId, onToggleFilterModal, onResetSelection, onDeleteSelected, onOpenSettings }) => {
+const Sidebar = ({ gpxTracks, onFileAdd, onToggleVisibility, onFocusGpx, focusedGpxId, onToggleFilterModal, onResetSelection, onDeleteSelected, onOpenSettings, onCollapse }) => {
   const [isDragging, setIsDragging] = useState(false);
 
   const handleFileChange = (e) => {
@@ -70,6 +70,9 @@ const Sidebar = ({ gpxTracks, onFileAdd, onToggleVisibility, onFocusGpx, focused
         />
         <button onClick={onToggleFilterModal} className="filter-button">
           フィルター
+        </button>
+        <button onClick={onCollapse} className="collapse-button">
+          &lt;
         </button>
       </div>
       <div className="file-list">

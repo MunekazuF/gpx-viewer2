@@ -11,7 +11,8 @@
   border-bottom: 1px solid #ddd;
   display: flex;
   gap: 10px; /* ボタン間のスペース */
-  padding:0px 10px 10px 10px;
+  padding: 10px;
+  align-items: center; /* ボタンを中央揃えに */
 }
 
 .file-upload-label, .filter-button, .reset-button, .delete-button {
@@ -25,10 +26,10 @@
   cursor: pointer;
   font-weight: bold;
   border: none;
-  font-size: 12px;
+  font-size: 10px;
 }
 
-.file-upload-label:hover, .filter-button:hover {
+.file-upload-label:hover, .filter-button:hover, .collapse-button:hover {
   background-color: #0056b3;
 }
 
@@ -38,6 +39,17 @@
 
 .delete-button:hover {
   background-color: #c82333;
+}
+
+.collapse-button {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-left: auto; /* 右端に配置 */
 }
 
 .file-list {
@@ -105,5 +117,8 @@
 @media (max-width: 768px) {
   .sidebar-header {
     margin-left: 40px; /* ハンバーガーメニューの閉じるボタンと重ならないように調整 */
+  }
+  .collapse-button {
+    display: none;
   }
 }

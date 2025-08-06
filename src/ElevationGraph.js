@@ -31,7 +31,7 @@ const crosshairPlugin = {
     const { canvas, scales, options } = chart;
     const { x: xAxis, y: yAxis } = scales;
     const pluginOptions = options.plugins.crosshair || {};
-    const { focusedGpxData, onPointHover } = pluginOptions;
+    const { focusedGpxData, onPointHover, isMergeMode, mergedPoints } = pluginOptions;
 
     const clearCrosshair = () => {
       if (chart.crosshair) {
@@ -41,7 +41,19 @@ const crosshairPlugin = {
       }
     };
 
-    if (!focusedGpxData) {
+    let pointsToUse = [];
+    let currentFocusedGpxData = null;
+
+    if (isMergeMode && mergedPoints && mergedPoints.length > 0) {
+      pointsToUse = mergedPoints;
+      // In merge mode, focusedGpxData is not directly used for crosshair point finding
+      // We need to find the original point from mergedPoints
+    } else if (focusedGpxData) {
+      pointsToUse = focusedGpxData.points;
+      currentFocusedGpxData = focusedGpxData;
+    }
+
+    if (!pointsToUse || pointsToUse.length === 0) {
       clearCrosshair();
       return;
     }
@@ -57,19 +69,35 @@ const crosshairPlugin = {
 
       if (mouseX >= xAxis.left && mouseX <= xAxis.right && mouseY >= yAxis.top && mouseY <= yAxis.bottom) {
         const distance = xAxis.getValueForPixel(mouseX);
-        const points = focusedGpxData.points;
         let interpolatedPoint = null;
 
-        if (points && points.length >= 2) {
-          for (let j = 0; j < points.length - 1; j++) {
-            const p1 = points[j];
-            const p2 = points[j + 1];
-            if (p1.distance <= distance && p2.distance >= distance) {
-              const t = (p2.distance - p1.distance) > 0 ? (distance - p1.distance) / (p2.distance - p1.distance) : 0;
-              const ele = p1.ele + t * (p2.ele - p1.ele);
-              const lat = p1.lat + t * (p2.lat - p1.lat);
-              const lng = p1.lng + t * (p2.lng - p1.lng);
-              interpolatedPoint = { lat, lng, ele, distance, color: focusedGpxData.color };
+        if (pointsToUse && pointsToUse.length >= 2) {
+          for (let j = 0; j < pointsToUse.length - 1; j++) {
+            const p1 = pointsToUse[j];
+            const p2 = pointsToUse[j + 1];
+            
+            const p1Distance = isMergeMode ? p1.x : p1.distance;
+            const p2Distance = isMergeMode ? p2.x : p2.distance;
+            const p1Ele = isMergeMode ? p1.y : p1.ele;
+            const p2Ele = isMergeMode ? p2.y : p2.ele;
+
+            if (p1Distance <= distance && p2Distance >= distance) {
+              const t = (p2Distance - p1Distance) > 0 ? (distance - p1Distance) / (p2Distance - p1Distance) : 0;
+              const ele = p1Ele + t * (p2Ele - p1Ele);
+              
+              // For crosshair, we need original lat/lng for map. If merged, use originalPoint.
+              const originalP1 = isMergeMode ? p1.originalPoint : p1;
+              const originalP2 = isMergeMode ? p2.originalPoint : p2;
+
+              const lat = originalP1.lat + t * (originalP2.lat - originalP1.lat);
+              const lng = originalP1.lng + t * (originalP2.lng - originalP1.lng);
+              
+              interpolatedPoint = {
+                lat, lng, ele, distance,
+                color: isMergeMode ? p1.color : (currentFocusedGpxData?.color || '#007bff'),
+                originalGpxName: isMergeMode ? p1.label : currentFocusedGpxData?.name,
+                originalTime: isMergeMode ? originalP1.time : originalP1.time,
+              };
               break;
             }
           }
@@ -133,6 +161,8 @@ ChartJS.register(crosshairPlugin);
 
 const ElevationGraph = ({ gpxData, onPointHover, focusedGpxData }) => {
   const [graphMode, setGraphMode] = useState('elevation'); // 'elevation', 'diff', 'gain'
+  const [isMergeMode, setIsMergeMode] = useState(false); // マージモードのstate
+  const [totalMergedGain, setTotalMergedGain] = useState(0); // 合計獲得標高のstate
 
   const toggleGraphMode = useCallback(() => {
     setGraphMode(currentMode => {
@@ -142,52 +172,148 @@ const ElevationGraph = ({ gpxData, onPointHover, focusedGpxData }) => {
     });
   }, []);
 
+  const handleMergeModeChange = useCallback((e) => {
+    setIsMergeMode(e.target.checked);
+  }, []);
+
   const longestTrack = useMemo(() => {
     if (!gpxData || gpxData.length === 0) return null;
+    // In merge mode, the longest track is the merged track itself
+    if (isMergeMode) return null; // Handled by mergedPoints total distance
+
     return gpxData.reduce((longest, current) => {
       const longestDist = longest.points[longest.points.length - 1]?.distance || 0;
       const currentDist = current.points[current.points.length - 1]?.distance || 0;
       return currentDist > longestDist ? current : longest;
     });
-  }, [gpxData]);
+  }, [gpxData, isMergeMode]);
 
   const chartData = useMemo(() => {
-    const datasets = (gpxData || []).map((gpx, index) => {
-      let yData;
-      switch (graphMode) {
-        case 'diff':
-          const startEle = gpx.points[0]?.ele || 0;
-          yData = gpx.points.map(p => p.ele - startEle);
-          break;
-        case 'gain':
-          let accumulatedGain = 0;
-          yData = gpx.points.map((p, i) => {
-            if (i > 0 && p.ele > gpx.points[i - 1].ele) {
-              accumulatedGain += p.ele - gpx.points[i - 1].ele;
+    let processedGpxData = [...(gpxData || [])];
+    let calculatedTotalGain = 0; // Initialize for current calculation
+
+    if (isMergeMode) {
+      // Sort by start time for merging
+      processedGpxData.sort((a, b) => new Date(a.time) - new Date(b.time));
+
+      const mergedPoints = [];
+      let currentXOffset = 0;
+      let currentYOffsetForDiff = 0; // For diff mode
+      let currentYOffsetForGain = 0; // For gain mode
+
+      processedGpxData.forEach((gpx, index) => {
+        let segmentYData = [];
+        let segmentGain = 0;
+
+        // Calculate yData for the current segment based on graphMode
+        switch (graphMode) {
+          case 'diff':
+            const segmentStartEle = gpx.points[0]?.ele || 0;
+            segmentYData = gpx.points.map(p => (p.ele - segmentStartEle));
+            break;
+          case 'gain':
+            let accumulatedGain = 0;
+            segmentYData = gpx.points.map((p, i) => {
+              if (i > 0 && p.ele > gpx.points[i - 1].ele) {
+                accumulatedGain += p.ele - gpx.points[i - 1].ele;
+              }
+              return accumulatedGain;
+            });
+            segmentGain = accumulatedGain; // Total gain for this segment
+            break;
+          default: // 'elevation'
+            segmentYData = gpx.points.map(p => p.ele);
+            break;
+        }
+
+        gpx.points.forEach((p, i) => {
+          const adjustedX = p.distance + currentXOffset;
+          let adjustedY = segmentYData[i];
+
+          if (index > 0) {
+            if (graphMode === 'diff') {
+              adjustedY += currentYOffsetForDiff;
+            } else if (graphMode === 'gain') {
+              adjustedY += currentYOffsetForGain;
             }
-            return accumulatedGain;
+          }
+
+          mergedPoints.push({
+            x: adjustedX,
+            y: adjustedY,
+            color: gpx.color,
+            label: gpx.name,
+            originalPoint: p // Keep original point for tooltip and crosshair
           });
-          break;
-        default: // 'elevation'
-          yData = gpx.points.map(p => p.ele);
-          break;
-      }
+        });
+
+        // Update offsets for the next segment
+        currentXOffset = mergedPoints[mergedPoints.length - 1]?.x || 0;
+        if (graphMode === 'diff') {
+          currentYOffsetForDiff = mergedPoints[mergedPoints.length - 1]?.y || 0;
+        } else if (graphMode === 'gain') {
+          currentYOffsetForGain = mergedPoints[mergedPoints.length - 1]?.y || 0;
+          calculatedTotalGain += segmentGain; // Accumulate total gain across segments
+        }
+      });
+
+      // Update the state for total merged gain
+      setTotalMergedGain(calculatedTotalGain);
+
+      const maxDistance = mergedPoints[mergedPoints.length - 1]?.x || 0;
 
       return {
-        label: gpx.name,
-        data: gpx.points.map((p, i) => ({ x: p.distance, y: yData[i] })),
-        borderColor: gpx.color || `hsl(${index * 137.5}, 70%, 50%)`,
-        backgroundColor: gpx.color ? `${gpx.color.slice(0, -1)}, 0.5)` : `hsla(${index * 137.5}, 70%, 50%, 0.5)`,
-        tension: 0.1,
-        pointRadius: 0,
+        labels: Array.from({ length: Math.ceil(maxDistance / 0.5) + 1 }, (_, i) => (i * 0.5).toFixed(1)),
+        datasets: [{
+          label: '結合トラック',
+          data: mergedPoints.map(p => ({ x: p.x, y: p.y })),
+          borderColor: '#007bff', // Default color for merged track
+          backgroundColor: 'rgba(0, 123, 255, 0.5)',
+          tension: 0.1,
+          pointRadius: 0,
+        }],
+        mergedPoints: mergedPoints, // Pass merged points for crosshair/tooltip
       };
-    });
 
-    return {
-      labels: longestTrack?.points.map(p => p.distance.toFixed(2)) || [],
-      datasets: datasets,
-    };
-  }, [gpxData, longestTrack, graphMode]);
+    } else { // Not merge mode (existing logic)
+      setTotalMergedGain(0); // Reset total merged gain when not in merge mode
+      const datasets = (gpxData || []).map((gpx, index) => {
+        let yData;
+        switch (graphMode) {
+          case 'diff':
+            const startEle = gpx.points[0]?.ele || 0;
+            yData = gpx.points.map(p => p.ele - startEle);
+            break;
+          case 'gain':
+            let accumulatedGain = 0;
+            yData = gpx.points.map((p, i) => {
+              if (i > 0 && p.ele > gpx.points[i - 1].ele) {
+                accumulatedGain += p.ele - gpx.points[i - 1].ele;
+              }
+              return accumulatedGain;
+            });
+            break;
+          default: // 'elevation'
+            yData = gpx.points.map(p => p.ele);
+            break;
+        }
+
+        return {
+          label: gpx.name,
+          data: gpx.points.map((p, i) => ({ x: p.distance, y: yData[i] })),
+          borderColor: gpx.color || `hsl(${index * 137.5}, 70%, 50%)`,
+          backgroundColor: gpx.color ? `${gpx.color.slice(0, -1)}, 0.5)` : `hsla(${index * 137.5}, 70%, 50%, 0.5)`,
+          tension: 0.1,
+          pointRadius: 0,
+        };
+      });
+
+      return {
+        labels: longestTrack?.points.map(p => p.distance.toFixed(2)) || [],
+        datasets: datasets,
+      };
+    }
+  }, [gpxData, longestTrack, graphMode, isMergeMode]);
 
   const getButtonLabel = () => {
     if (graphMode === 'elevation') return '標高';
@@ -203,13 +329,15 @@ const ElevationGraph = ({ gpxData, onPointHover, focusedGpxData }) => {
     }
   };
 
-  const options = {
+  const options = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       crosshair: {
         focusedGpxData: focusedGpxData,
         onPointHover: onPointHover,
+        isMergeMode: isMergeMode,
+        mergedPoints: chartData.mergedPoints, // Pass merged points to crosshair plugin
       },
       legend: {
         position: 'top',
@@ -225,10 +353,21 @@ const ElevationGraph = ({ gpxData, onPointHover, focusedGpxData }) => {
             return null; // No title
           },
           label: function(context) {
-            return context.dataset.label || ''; // File name with color box
+            if (isMergeMode) {
+              const point = chartData.mergedPoints[context.dataIndex];
+              return point.label || ''; // Original file name
+            } else {
+              return context.dataset.label || ''; // File name with color box
+            }
           },
           afterLabel: function(context) {
-            const point = gpxData[context.datasetIndex].points[context.dataIndex];
+            let point;
+            if (isMergeMode) {
+              point = chartData.mergedPoints[context.dataIndex].originalPoint;
+            } else {
+              point = gpxData[context.datasetIndex].points[context.dataIndex];
+            }
+            
             const time = point && point.time ? new Date(point.time).toLocaleString('ja-JP') : '';
             const value = Math.round(context.parsed.y);
             const yAxisLabel = getYAxisLabel().split(' ')[0];
@@ -259,7 +398,7 @@ const ElevationGraph = ({ gpxData, onPointHover, focusedGpxData }) => {
         }
       }
     }
-  };
+  }), [focusedGpxData, onPointHover, graphMode, isMergeMode, chartData.mergedPoints, gpxData]);
 
   return (
     <div className="elevation-graph">
@@ -267,6 +406,19 @@ const ElevationGraph = ({ gpxData, onPointHover, focusedGpxData }) => {
         <button onClick={toggleGraphMode} className="graph-mode-toggle-btn">
           {getButtonLabel()}
         </button>
+        {isMergeMode && graphMode === 'gain' && (
+          <span className="total-gain-display">
+            合計: {Math.round(totalMergedGain)} m
+          </span>
+        )}
+        <label className="merge-mode-checkbox">
+          <input
+            type="checkbox"
+            checked={isMergeMode}
+            onChange={handleMergeModeChange}
+          />
+          マージ
+        </label>
         {(gpxData && gpxData.length > 0) ? (
           <Line options={options} data={chartData} />
         ) : (

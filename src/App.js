@@ -5,7 +5,7 @@ import ElevationGraph from './ElevationGraph';
 import Map from './components/Map';
 import GpxInfoOverlay from './GpxInfoOverlay';
 import FilterModal from './FilterModal';
-import SettingsModal from './components/SettingsModal'; // SettingsModalをインポート
+import SettingsModal from './components/SettingsModal';
 import useUI from './hooks/useUI';
 import useGpx from './hooks/useGpx';
 import useMap from './hooks/useMap';
@@ -13,7 +13,7 @@ import './App.css';
 
 function App() {
   const [hoveredPoint, setHoveredPoint] = useState(null);
-  const { isMobile, isSidebarOpen, toggleSidebar, isFilterModalOpen, toggleFilterModal, mobileView, setMobileView } = useUI();
+  const { isMobile, isTablet, isSidebarOpen, toggleSidebar, isSidebarCollapsed, toggleSidebarCollapse, isFilterModalOpen, toggleFilterModal, mobileView, setMobileView } = useUI();
   const { mapBounds, onBoundsChange } = useMap();
   const {
     gpxTracks,
@@ -32,13 +32,14 @@ function App() {
   } = useGpx(mapBounds);
 
   const [graphSizeMode, setGraphSizeMode] = useState('normal');
+  const horizontalSplitRef = useRef(null);
   const verticalSplitRef = useRef(null);
-  const [isSettingsModalOpen, setSettingsModalOpen] = useState(false); // 設定モーダルのstate
-  const [settingsChanged, setSettingsChanged] = useState(false); // 設定変更を通知するstate
+  const [isSettingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [settingsChanged, setSettingsChanged] = useState(false);
 
   const handleCloseSettingsModal = () => {
     setSettingsModalOpen(false);
-    setSettingsChanged(prev => !prev); // stateを反転させて子コンポーネントに通知
+    setSettingsChanged(prev => !prev);
   };
 
   const toggleGraphSizeMode = useCallback(() => {
@@ -61,36 +62,61 @@ function App() {
 
   useEffect(() => {
     if (isMobile) {
-      if (verticalSplitRef.current) {
-        verticalSplitRef.current.destroy();
-        verticalSplitRef.current = null;
+      if (horizontalSplitRef.current) {
+        horizontalSplitRef.current.destroy();
+        horizontalSplitRef.current = null;
       }
       return;
     }
 
-    const horizontalSplit = Split(['#sidebar', '#main-area'], {
-      sizes: [15, 85], minSize: [200, 300], gutterSize: 8, cursor: 'col-resize',
-    });
-
-    if (graphSizeMode === 'normal') {
-      verticalSplitRef.current = Split(['#map-area', '#graph-area'], {
-        sizes: [70, 30], direction: 'vertical', minSize: 100, gutterSize: 8, cursor: 'row-resize',
+    const sidebarSize = isTablet ? 30 : 15;
+    if (!horizontalSplitRef.current) {
+      horizontalSplitRef.current = Split(['#sidebar', '#main-area'], {
+        sizes: [sidebarSize, 100 - sidebarSize], minSize: [0, 300], gutterSize: 8, cursor: 'col-resize',
       });
-    } else {
-      if (verticalSplitRef.current) {
-        verticalSplitRef.current.destroy();
-        verticalSplitRef.current = null;
-      }
     }
 
     return () => {
-      horizontalSplit.destroy();
-      if (verticalSplitRef.current) {
-        verticalSplitRef.current.destroy();
-        verticalSplitRef.current = null;
+      if (horizontalSplitRef.current) {
+        horizontalSplitRef.current.destroy();
+        horizontalSplitRef.current = null;
       }
     };
-  }, [isMobile, graphSizeMode]);
+  }, [isMobile, isTablet]);
+
+  useEffect(() => {
+    if (isMobile) {
+        if (verticalSplitRef.current) {
+            verticalSplitRef.current.destroy();
+            verticalSplitRef.current = null;
+        }
+        return;
+    }
+
+    if (graphSizeMode === 'normal' && !verticalSplitRef.current) {
+        verticalSplitRef.current = Split(['#map-area', '#graph-area'], {
+            sizes: [70, 30], direction: 'vertical', minSize: 100, gutterSize: 8, cursor: 'row-resize',
+        });
+    } else if (graphSizeMode !== 'normal' && verticalSplitRef.current) {
+        verticalSplitRef.current.destroy();
+        verticalSplitRef.current = null;
+    }
+
+    return () => {
+        if (verticalSplitRef.current) {
+            verticalSplitRef.current.destroy();
+            verticalSplitRef.current = null;
+        }
+    };
+}, [isMobile, graphSizeMode]);
+
+
+  useEffect(() => {
+    if (!isMobile && horizontalSplitRef.current) {
+      const sidebarSize = isTablet ? 30 : 15;
+      horizontalSplitRef.current.setSizes(isSidebarCollapsed ? [0, 100] : [sidebarSize, 100 - sidebarSize]);
+    }
+  }, [isSidebarCollapsed, isMobile, isTablet]);
 
   const getGraphAreaStyle = () => {
     if (isMobile || graphSizeMode === 'normal') return {};
@@ -126,8 +152,13 @@ function App() {
           {isSidebarOpen ? <>&times;</> : <>&equiv;</>}
         </button>
       )}
+      {!isMobile && isSidebarCollapsed && (
+        <button className="sidebar-expand-button" onClick={toggleSidebarCollapse}>
+          &gt;
+        </button>
+      )}
       <div id="sidebar" className={sidebarClasses}>
-        <Sidebar gpxTracks={gpxTracks} onFileAdd={addGpxFiles} onToggleVisibility={toggleGpxVisibility} onFocusGpx={setFocusedGpxId} focusedGpxId={focusedGpxId} onToggleFilterModal={toggleFilterModal} onResetSelection={resetSelection} onDeleteSelected={deleteSelectedGpx} mapBounds={mapBounds} onOpenSettings={() => setSettingsModalOpen(true)} />
+        <Sidebar gpxTracks={gpxTracks} onFileAdd={addGpxFiles} onToggleVisibility={toggleGpxVisibility} onFocusGpx={setFocusedGpxId} focusedGpxId={focusedGpxId} onToggleFilterModal={toggleFilterModal} onResetSelection={resetSelection} onDeleteSelected={deleteSelectedGpx} mapBounds={mapBounds} onOpenSettings={() => setSettingsModalOpen(true)} onCollapse={toggleSidebarCollapse} />
       </div>
       {!isMobile && <div className="gutter gutter-horizontal"></div>}
       <div id="main-area" className={isMobile ? 'main-area-mobile' : 'split'}>
