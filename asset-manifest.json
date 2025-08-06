@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/gpx-viewer2/static/css/main.59d187ac.css",
-    "main.js": "/gpx-viewer2/static/js/main.f9c122f4.js",
+    "main.js": "/gpx-viewer2/static/js/main.1a00312f.js",
     "index.html": "/gpx-viewer2/index.html",
     "main.59d187ac.css.map": "/gpx-viewer2/static/css/main.59d187ac.css.map",
-    "main.f9c122f4.js.map": "/gpx-viewer2/static/js/main.f9c122f4.js.map"
+    "main.1a00312f.js.map": "/gpx-viewer2/static/js/main.1a00312f.js.map"
   },
   "entrypoints": [
     "static/css/main.59d187ac.css",
-    "static/js/main.f9c122f4.js"
+    "static/js/main.1a00312f.js"
   ]
 }
