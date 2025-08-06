@@ -121,6 +121,19 @@ const Map = ({ gpxData, focusedGpxData, hoveredPoint, onBoundsChange, onTrackCli
             attribution='&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>'
           />
         </LayersControl.BaseLayer>
+        <LayersControl.BaseLayer checked={selectedTile === 'OpenTopoMap'} name="OpenTopoMap">
+          <TileLayer
+            url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, Tiles: <a href="https://opentopomap.org/">OpenTopoMap</a>'
+            maxZoom={17}
+          />
+        </LayersControl.BaseLayer>
+        <LayersControl.BaseLayer checked={selectedTile === 'Esri WorldTopoMap'} name="Esri WorldTopoMap">
+          <TileLayer
+            url="https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"
+            attribution='Sources: Esri, HERE, Garmin, Intermap, INCREMENT P, GEBCO, USGS, FAO, NPS, NRCan, GeoBase, IGN, Kadaster NL, Ordnance Survey, Esri Japan, METI, Mapwithyou, NOSTRA, &copy; OpenStreetMap contributors, and the GIS user community.'
+          />
+        </LayersControl.BaseLayer>
       </LayersControl>
       <ZoomControl position="bottomright" />
 
