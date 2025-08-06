@@ -10,6 +10,8 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import { useGpxContext } from '../contexts/GpxContext';
+import './ElevationGraph.css';
 
 // Chart.jsに必要なコンポーネントを登録
 ChartJS.register(
@@ -161,7 +163,8 @@ const crosshairPlugin = {
 ChartJS.register(crosshairPlugin);
 
 
-const ElevationGraph = ({ gpxData, onPointHover, focusedGpxData }) => {
+const ElevationGraph = ({ onPointHover }) => {
+  const { visibleGpxTracks, focusedGpxData } = useGpxContext();
   const [graphMode, setGraphMode] = useState('elevation'); // 'elevation', 'diff', 'gain'
   const [isMergeMode, setIsMergeMode] = useState(false); // マージモードのstate
   const [totalMergedGain, setTotalMergedGain] = useState(0); // 合計獲得標高のstate
@@ -179,19 +182,19 @@ const ElevationGraph = ({ gpxData, onPointHover, focusedGpxData }) => {
   }, []);
 
   const longestTrack = useMemo(() => {
-    if (!gpxData || gpxData.length === 0) return null;
+    if (!visibleGpxTracks || visibleGpxTracks.length === 0) return null;
     // In merge mode, the longest track is the merged track itself
     if (isMergeMode) return null; // Handled by mergedPoints total distance
 
-    return gpxData.reduce((longest, current) => {
+    return visibleGpxTracks.reduce((longest, current) => {
       const longestDist = longest.points[longest.points.length - 1]?.distance || 0;
       const currentDist = current.points[current.points.length - 1]?.distance || 0;
       return currentDist > longestDist ? current : longest;
     });
-  }, [gpxData, isMergeMode]);
+  }, [visibleGpxTracks, isMergeMode]);
 
   const chartData = useMemo(() => {
-    let processedGpxData = [...(gpxData || [])];
+    let processedGpxData = [...(visibleGpxTracks || [])];
     let calculatedTotalGain = 0; // Initialize for current calculation
 
     if (isMergeMode) {
@@ -279,7 +282,7 @@ const ElevationGraph = ({ gpxData, onPointHover, focusedGpxData }) => {
 
     } else { // Not merge mode (existing logic)
       setTotalMergedGain(0); // Reset total merged gain when not in merge mode
-      const datasets = (gpxData || []).map((gpx, index) => {
+      const datasets = (visibleGpxTracks || []).map((gpx, index) => {
         let yData;
         switch (graphMode) {
           case 'diff':
@@ -315,7 +318,7 @@ const ElevationGraph = ({ gpxData, onPointHover, focusedGpxData }) => {
         datasets: datasets,
       };
     }
-  }, [gpxData, longestTrack, graphMode, isMergeMode]);
+  }, [visibleGpxTracks, longestTrack, graphMode, isMergeMode]);
 
   const getButtonLabel = () => {
     if (graphMode === 'elevation') return '標高';
@@ -367,7 +370,7 @@ const ElevationGraph = ({ gpxData, onPointHover, focusedGpxData }) => {
             if (isMergeMode) {
               point = chartData.mergedPoints[context.dataIndex].originalPoint;
             } else {
-              point = gpxData[context.datasetIndex].points[context.dataIndex];
+              point = visibleGpxTracks[context.datasetIndex].points[context.dataIndex];
             }
             
             const time = point && point.time ? new Date(point.time).toLocaleString('ja-JP') : '';
@@ -400,7 +403,7 @@ const ElevationGraph = ({ gpxData, onPointHover, focusedGpxData }) => {
         }
       }
     }
-  }), [focusedGpxData, onPointHover, graphMode, isMergeMode, chartData.mergedPoints, gpxData]);
+  }), [focusedGpxData, onPointHover, graphMode, isMergeMode, chartData.mergedPoints, visibleGpxTracks]);
 
   return (
     <div className="elevation-graph">
@@ -421,7 +424,7 @@ const ElevationGraph = ({ gpxData, onPointHover, focusedGpxData }) => {
           />
           マージ
         </label>
-        {(gpxData && gpxData.length > 0) ? (
+        {(visibleGpxTracks && visibleGpxTracks.length > 0) ? (
           <Line options={options} data={chartData} />
         ) : (
           <p>グラフを表示するデータがありません。</p>

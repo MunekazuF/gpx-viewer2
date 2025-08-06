@@ -1,8 +1,11 @@
 import React from 'react';
+import { useGpxContext } from '../contexts/GpxContext';
 import './GpxInfoOverlay.css';
 
-const GpxInfoOverlay = ({ gpx, onClose }) => {
-  if (!gpx) {
+const GpxInfoOverlay = () => {
+  const { focusedGpxData, hideInfoOverlay } = useGpxContext();
+
+  if (!focusedGpxData) {
     return null;
   }
 
@@ -29,19 +32,19 @@ const GpxInfoOverlay = ({ gpx, onClose }) => {
     return { totalDistance, elevationGain, maxEle, minEle };
   };
 
-  const stats = calculateStats(gpx.points);
+  const stats = calculateStats(focusedGpxData.points);
 
   const formatDate = (date) => date ? new Intl.DateTimeFormat('ja-JP').format(date) : 'N/A';
   const formatTime = (date) => date ? new Intl.DateTimeFormat('ja-JP', { hour: '2-digit', minute: '2-digit' }).format(date) : 'N/A';
   const formatNumber = (num) => new Intl.NumberFormat('ja-JP').format(num);
 
   return (
-    <div className="gpx-info-overlay" onClick={onClose}>
-      <h3>{gpx.name}</h3>
+    <div className="gpx-info-overlay" onClick={hideInfoOverlay}>
+      <h3>{focusedGpxData.name}</h3>
       <ul>
-        <li><strong>出発日:</strong> {formatDate(gpx.time)}</li>
-        <li><strong>出発時間:</strong> {formatTime(gpx.points[0]?.time)}</li>
-        <li><strong>到着時間:</strong> {formatTime(gpx.points[gpx.points.length - 1]?.time)}</li>
+        <li><strong>出発日:</strong> {formatDate(focusedGpxData.time)}</li>
+        <li><strong>出発時間:</strong> {formatTime(focusedGpxData.points[0]?.time)}</li>
+        <li><strong>到着時間:</strong> {formatTime(focusedGpxData.points[focusedGpxData.points.length - 1]?.time)}</li>
         <li><strong>総距離:</strong> {stats.totalDistance.toFixed(2)} km</li>
         <li><strong>獲得標高:</strong> {formatNumber(stats.elevationGain.toFixed(0))} m</li>
         <li><strong>最高標高:</strong> {stats.maxEle > -Infinity ? `${formatNumber(stats.maxEle.toFixed(0))} m` : 'N/A'}</li>

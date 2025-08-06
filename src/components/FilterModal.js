@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useGpxContext } from '../contexts/GpxContext';
 import './FilterModal.css';
 
-const FilterModal = ({ currentFilter, onApplyFilter, onClose, mapBounds }) => {
+const FilterModal = ({ onClose, mapBounds }) => {
+  const { filter: currentFilter, setFilter: onApplyFilter } = useGpxContext();
   const [keyword, setKeyword] = useState(currentFilter.keyword || '');
   const [startDate, setStartDate] = useState(currentFilter.startDate || '');
   const [endDate, setEndDate] = useState(currentFilter.endDate || '');

@@ -1,7 +1,11 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { parseGpx } from '../utils/gpxParser';
 import { saveGpxData, getAllGpxMetadata, getGpxDataById, deleteGpxDataByIds } from '../utils/db';
 import { filterGpxFiles } from '../utils/gpxFilter';
+
+const GpxContext = createContext();
+
+export const useGpxContext = () => useContext(GpxContext);
 
 // 緑色を避けつつ、ランダムで鮮やかな色を生成する
 const generateColor = () => {
@@ -12,7 +16,7 @@ const generateColor = () => {
   return `hsl(${hue}, 90%, 50%)`;
 };
 
-const useGpx = (mapBounds) => {
+export const GpxProvider = ({ children }) => {
   const [gpxTracks, setGpxTracks] = useState([]); // 全てのGPXメタデータと表示状態
   const [focusedGpxId, _setFocusedGpxId] = useState(null);
   const [focusedGpxData, setFocusedGpxData] = useState(null); // フォーカスされたトラックの完全なデータ
@@ -28,7 +32,6 @@ const useGpx = (mapBounds) => {
         points: null,
         color: meta.color || generateColor() // DBに色がなければ生成
       })).sort((a, b) => {
-        // timeがnullの場合はソートの最後に持ってくる
         if (!a.time && !b.time) return 0;
         if (!a.time) return 1;
         if (!b.time) return -1;
@@ -83,17 +86,14 @@ const useGpx = (mapBounds) => {
 
   const setFocusedGpxId = (id) => {
     if (id && id === focusedGpxId) {
-      // 同じIDが再度クリックされた場合は、オーバーレイの表示/非表示を切り替える
-      // そして、MapControllerが再ズームするようにfocusedGpxDataを一時的にnullにする
       setInfoOverlayVisible(prev => !prev);
-      setFocusedGpxData(null); // これでMapControllerのuseEffectが再実行される
+      setFocusedGpxData(null);
       requestAnimationFrame(async () => {
         const fullData = await getGpxDataById(id);
         setFocusedGpxData(fullData);
         _setFocusedGpxId(id);
       });
     } else {
-      // 新しいIDがクリックされた場合
       _setFocusedGpxId(null);
       setFocusedGpxData(null);
       if (id) {
@@ -101,10 +101,10 @@ const useGpx = (mapBounds) => {
           const fullData = await getGpxDataById(id);
           setFocusedGpxData(fullData);
           _setFocusedGpxId(id);
-          setInfoOverlayVisible(true); // 新しいデータを表示
+          setInfoOverlayVisible(true);
         });
       } else {
-        setInfoOverlayVisible(false); // IDがnullなら非表示
+        setInfoOverlayVisible(false);
       }
     }
   };
@@ -126,7 +126,6 @@ const useGpx = (mapBounds) => {
 
     await deleteGpxDataByIds(selectedIds);
     setGpxTracks(prev => prev.filter(track => !selectedIds.includes(track.id)));
-    // 削除されたトラックがフォーカスされていたら、フォーカスも解除
     if (selectedIds.includes(focusedGpxId)) {
         setInfoOverlayVisible(false);
         _setFocusedGpxId(null);
@@ -137,42 +136,35 @@ const useGpx = (mapBounds) => {
   const applyFilter = useCallback(async (filters) => {
     setCurrentFilter(filters);
 
-    // フィルター条件がクリアされた場合はリセットを実行
     if (filters.isClear) {
       resetSelection();
       return;
     }
 
-    // フィルター条件がデフォルトの場合は何もしない
     const isDefaultFilter = !filters.keyword && !filters.startDate && !filters.endDate && !filters.useMapBounds;
     if (isDefaultFilter) {
       return;
     }
 
-    // 1. 適用前にすべての選択を解除
     const deselectedTracks = gpxTracks.map(track => 
       track.isVisible ? { ...track, isVisible: false, points: null } : track
     );
 
-    // 2. メモリ上の軽量なメタデータでフィルタリング
     const filtered = filterGpxFiles(deselectedTracks, filters);
     const filteredIds = filtered.map(track => track.id);
 
-    // 3. 上位20件を選択状態にする
     const tracksWithNewVisibility = deselectedTracks.map(track => {
       const isFiltered = filteredIds.includes(track.id);
       const shouldBeVisible = isFiltered && filteredIds.indexOf(track.id) < 20;
       return { ...track, isVisible: shouldBeVisible };
     });
 
-    // 4. 表示が必要なトラックの完全なデータを読み込む
     const tracksToLoad = tracksWithNewVisibility.filter(t => t.isVisible && !t.points);
     if (tracksToLoad.length > 0) {
       const loadedTracksData = await Promise.all(
         tracksToLoad.map(t => getGpxDataById(t.id))
       );
       
-      // 読み込んだデータで状態を更新
       setGpxTracks(currentTracks => {
         const updatedTracks = [...tracksWithNewVisibility];
         loadedTracksData.forEach(loadedTrack => {
@@ -184,7 +176,6 @@ const useGpx = (mapBounds) => {
         return updatedTracks;
       });
     } else {
-      // 表示するトラックがない場合でも、非表示の状態を反映
       setGpxTracks(tracksWithNewVisibility);
     }
   }, [gpxTracks, resetSelection]);
@@ -192,9 +183,8 @@ const useGpx = (mapBounds) => {
   const sidebarTracks = useMemo(() => {
     const isFilterActive = currentFilter.keyword || currentFilter.startDate || currentFilter.endDate || currentFilter.useMapBounds;
     if (!isFilterActive) {
-      return gpxTracks; // フィルターがなければ全件
+      return gpxTracks;
     }
-    // フィルターがあれば、フィルターにマッチしたものだけを返す
     return filterGpxFiles(gpxTracks, currentFilter);
   }, [gpxTracks, currentFilter]);
 
@@ -202,8 +192,8 @@ const useGpx = (mapBounds) => {
     return gpxTracks.filter(t => t.isVisible && t.points);
   }, [gpxTracks]);
 
-  return {
-    gpxTracks: sidebarTracks, // サイドバー表示用
+  const value = {
+    gpxTracks: sidebarTracks,
     visibleGpxTracks,
     focusedGpxData,
     isInfoOverlayVisible,
@@ -212,11 +202,11 @@ const useGpx = (mapBounds) => {
     toggleGpxVisibility,
     focusedGpxId,
     setFocusedGpxId,
-    filter: currentFilter, // フィルターの状態を返す
-    setFilter: applyFilter, // フィルター適用関数を公開
+    filter: currentFilter,
+    setFilter: applyFilter,
     resetSelection,
     deleteSelectedGpx,
   };
-};
 
-export default useGpx;
+  return <GpxContext.Provider value={value}>{children}</GpxContext.Provider>;
+};

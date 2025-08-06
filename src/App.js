@@ -1,54 +1,38 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Split from 'split.js';
-import Sidebar from './Sidebar';
-import ElevationGraph from './ElevationGraph';
+import Sidebar from './components/Sidebar';
+import ElevationGraph from './components/ElevationGraph';
 import Map from './components/Map';
-import GpxInfoOverlay from './GpxInfoOverlay';
-import FilterModal from './FilterModal';
+import GpxInfoOverlay from './components/GpxInfoOverlay';
+import FilterModal from './components/FilterModal';
 import SettingsModal from './components/SettingsModal';
 import useUI from './hooks/useUI';
-import useGpx from './hooks/useGpx';
+import { useGpxContext } from './contexts/GpxContext';
 import useMap from './hooks/useMap';
 import './App.css';
 
 function App() {
   const [hoveredPoint, setHoveredPoint] = useState(null);
-  const { isMobile, isTablet, isSidebarOpen, toggleSidebar, isSidebarCollapsed, toggleSidebarCollapse, isFilterModalOpen, toggleFilterModal, mobileView, setMobileView } = useUI();
+  const { 
+    isMobile, isTablet, isSidebarOpen, toggleSidebar, 
+    isSidebarCollapsed, toggleSidebarCollapse, 
+    isFilterModalOpen, toggleFilterModal, 
+    mobileView, setMobileView,
+    graphSizeMode, toggleGraphSizeMode,
+    isSettingsModalOpen, toggleSettingsModal,
+    getGraphAreaStyle, getMapAreaStyle, getGraphButtonIcon
+  } = useUI();
   const { mapBounds, onBoundsChange } = useMap();
-  const {
-    gpxTracks,
-    visibleGpxTracks,
-    focusedGpxData,
-    isInfoOverlayVisible,
-    hideInfoOverlay,
-    addGpxFiles,
-    toggleGpxVisibility,
-    focusedGpxId,
-    setFocusedGpxId,
-    filter,
-    setFilter,
-    resetSelection,
-    deleteSelectedGpx,
-  } = useGpx(mapBounds);
-
-  const [graphSizeMode, setGraphSizeMode] = useState('normal');
-  const horizontalSplitRef = useRef(null);
-  const verticalSplitRef = useRef(null);
-  const [isSettingsModalOpen, setSettingsModalOpen] = useState(false);
+  const { isInfoOverlayVisible } = useGpxContext();
   const [settingsChanged, setSettingsChanged] = useState(false);
 
+  const horizontalSplitRef = useRef(null);
+  const verticalSplitRef = useRef(null);
+
   const handleCloseSettingsModal = () => {
-    setSettingsModalOpen(false);
+    toggleSettingsModal();
     setSettingsChanged(prev => !prev);
   };
-
-  const toggleGraphSizeMode = useCallback(() => {
-    setGraphSizeMode(currentMode => {
-      if (currentMode === 'normal') return 'maximized';
-      if (currentMode === 'maximized') return 'minimized';
-      return 'normal';
-    });
-  }, []);
 
   useEffect(() => {
     const preventDefault = (e) => e.preventDefault();
@@ -118,31 +102,12 @@ function App() {
     }
   }, [isSidebarCollapsed, isMobile, isTablet]);
 
-  const getGraphAreaStyle = () => {
-    if (isMobile || graphSizeMode === 'normal') return {};
-    if (graphSizeMode === 'maximized') return { flexGrow: 1, height: '100%', minHeight: '0' };
-    if (graphSizeMode === 'minimized') return { flexGrow: 0, height: '0', minHeight: '0', overflow: 'hidden' };
-    return {};
-  };
-  const getMapAreaStyle = () => {
-    if (isMobile || graphSizeMode === 'normal') return {};
-    if (graphSizeMode === 'maximized') return { flexGrow: 0, height: '0', minHeight: '0', overflow: 'hidden' };
-    if (graphSizeMode === 'minimized') return { flexGrow: 1, height: '100%', minHeight: '0' };
-    return {};
-  };
-  
-  const getGraphButtonIcon = () => {
-    if (graphSizeMode === 'normal') return '↗';
-    if (graphSizeMode === 'maximized') return '↙';
-    return '↔';
-  };
-
   const sidebarClasses = `${isMobile ? 'sidebar-mobile' : 'split'} ${isMobile && isSidebarOpen ? 'open' : ''}`;
 
   return (
     <div className="app-container">
       {isFilterModalOpen && (
-        <FilterModal currentFilter={filter} onApplyFilter={setFilter} onClose={toggleFilterModal} mapBounds={mapBounds} />
+        <FilterModal onClose={toggleFilterModal} mapBounds={mapBounds} />
       )}
       {isSettingsModalOpen && (
         <SettingsModal isOpen={isSettingsModalOpen} onClose={handleCloseSettingsModal} />
@@ -158,11 +123,11 @@ function App() {
         </button>
       )}
       <div id="sidebar" className={sidebarClasses}>
-        <Sidebar gpxTracks={gpxTracks} onFileAdd={addGpxFiles} onToggleVisibility={toggleGpxVisibility} onFocusGpx={setFocusedGpxId} focusedGpxId={focusedGpxId} onToggleFilterModal={toggleFilterModal} onResetSelection={resetSelection} onDeleteSelected={deleteSelectedGpx} mapBounds={mapBounds} onOpenSettings={() => setSettingsModalOpen(true)} onCollapse={toggleSidebarCollapse} />
+        <Sidebar onToggleFilterModal={toggleFilterModal} mapBounds={mapBounds} onOpenSettings={toggleSettingsModal} onCollapse={toggleSidebarCollapse} />
       </div>
       {!isMobile && <div className="gutter gutter-horizontal"></div>}
       <div id="main-area" className={isMobile ? 'main-area-mobile' : 'split'}>
-        {isInfoOverlayVisible && <GpxInfoOverlay gpx={focusedGpxData} onClose={hideInfoOverlay} />}
+        {isInfoOverlayVisible && <GpxInfoOverlay />}
         {!isMobile && (
           <button onClick={toggleGraphSizeMode} className="graph-size-toggle-btn" title="グラフサイズ切替">
             {getGraphButtonIcon()}
@@ -176,22 +141,22 @@ function App() {
             </div>
             {mobileView === 'map' && (
               <div id="map-area" className="map-area-mobile">
-                <Map gpxData={visibleGpxTracks} focusedGpxData={focusedGpxData} hoveredPoint={hoveredPoint} onBoundsChange={onBoundsChange} onTrackClick={setFocusedGpxId} settingsChanged={settingsChanged} />
+                <Map hoveredPoint={hoveredPoint} onBoundsChange={onBoundsChange} settingsChanged={settingsChanged} />
               </div>
             )}
             {mobileView === 'graph' && (
               <div id="graph-area" className="graph-area-mobile">
-                <ElevationGraph gpxData={visibleGpxTracks} onPointHover={setHoveredPoint} focusedGpxData={focusedGpxData} />
+                <ElevationGraph onPointHover={setHoveredPoint} />
               </div>
             )}
           </>
         ) : (
           <>
             <div id="map-area" className="split-vertical" style={getMapAreaStyle()}>
-              <Map gpxData={visibleGpxTracks} focusedGpxData={focusedGpxData} hoveredPoint={hoveredPoint} onBoundsChange={onBoundsChange} onTrackClick={setFocusedGpxId} settingsChanged={settingsChanged} />
+              <Map hoveredPoint={hoveredPoint} onBoundsChange={onBoundsChange} settingsChanged={settingsChanged} />
             </div>
             <div id="graph-area" className="split-vertical" style={getGraphAreaStyle()}>
-              <ElevationGraph gpxData={visibleGpxTracks} onPointHover={setHoveredPoint} focusedGpxData={focusedGpxData} key={graphSizeMode} />
+              <ElevationGraph onPointHover={setHoveredPoint} key={graphSizeMode} />
             </div>
           </>
         )}

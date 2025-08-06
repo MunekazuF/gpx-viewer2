@@ -1,12 +1,23 @@
 import React, { useState } from 'react';
+import { useGpxContext } from '../contexts/GpxContext';
 import './Sidebar.css';
 
-const Sidebar = ({ gpxTracks, onFileAdd, onToggleVisibility, onFocusGpx, focusedGpxId, onToggleFilterModal, onResetSelection, onDeleteSelected, onOpenSettings, onCollapse }) => {
+const Sidebar = ({ onToggleFilterModal, onOpenSettings, onCollapse }) => {
+  const {
+    gpxTracks,
+    addGpxFiles,
+    toggleGpxVisibility,
+    setFocusedGpxId,
+    focusedGpxId,
+    resetSelection,
+    deleteSelectedGpx,
+  } = useGpxContext();
+
   const [isDragging, setIsDragging] = useState(false);
 
   const handleFileChange = (e) => {
     if (e.target.files) {
-      onFileAdd(e.target.files);
+      addGpxFiles(e.target.files);
       e.target.value = '';
     }
   };
@@ -34,7 +45,7 @@ const Sidebar = ({ gpxTracks, onFileAdd, onToggleVisibility, onFocusGpx, focused
     setIsDragging(false);
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      onFileAdd(e.dataTransfer.files);
+      addGpxFiles(e.dataTransfer.files);
     }
   };
 
@@ -80,14 +91,14 @@ const Sidebar = ({ gpxTracks, onFileAdd, onToggleVisibility, onFocusGpx, focused
           <div
             key={data.id}
             className={`file-item ${data.id === focusedGpxId ? 'focused' : ''}`}
-            onClick={() => onFocusGpx(data.id)}
+            onClick={() => setFocusedGpxId(data.id)}
           >
             <input
               type="checkbox"
               checked={data.isVisible}
               onChange={(e) => {
                 e.stopPropagation();
-                onToggleVisibility(data.id);
+                toggleGpxVisibility(data.id);
               }}
             />
             <span className="file-name">
@@ -97,12 +108,12 @@ const Sidebar = ({ gpxTracks, onFileAdd, onToggleVisibility, onFocusGpx, focused
         ))}
       </div>
       <div className="sidebar-footer">
-        <button onClick={onResetSelection} className="reset-button">
+        <button onClick={resetSelection} className="reset-button">
           リセット
         </button>
         <button onClick={() => {
           if (window.confirm('選択したファイルを削除しますか？')) {
-            onDeleteSelected();
+            deleteSelectedGpx();
           }
         }} className="delete-button">
           削除

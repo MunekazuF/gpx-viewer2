@@ -1,10 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { MapContainer, TileLayer, LayersControl, ScaleControl, Polyline, Marker, useMap, useMapEvents, ZoomControl } from 'react-leaflet';
+import { MapContainer, TileLayer, LayersControl, ScaleControl, Polyline, Marker, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import 'leaflet-touch-helper'; // leaflet-touch-helperをインポート
 import StartEndMarkers from './StartEndMarkers';
 import { getCookie, setCookie } from '../utils/cookie';
+import { useGpxContext } from '../contexts/GpxContext';
+import MapEvents from './MapEvents';
+import MapController from './MapController';
+import TouchHelperInitializer from './TouchHelperInitializer';
 
 // --- Leafletのデフォルトアイコン問題を修正 ---
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -18,64 +21,10 @@ L.Icon.Default.mergeOptions({
 });
 // --- 修正ここまで ---
 
-
-// --- MapEvents: 地図の移動/ズームイベントを捕捉するコンポーネント ---
-const MapEvents = ({ onBoundsChange, onBaseLayerChange }) => {
-  const map = useMapEvents({
-    moveend: () => onBoundsChange(map.getBounds()),
-    zoomend: () => onBoundsChange(map.getBounds()),
-    baselayerchange: (e) => onBaseLayerChange(e), // baselayerchangeイベントをリッスン
-  });
-  return null;
-};
-
-// --- MapController: 地図の表示範囲を自動調整するコンポーネント ---
-const MapController = ({ gpxData, focusedGpxData }) => {
-  const map = useMap();
-
-  useEffect(() => {
-    // ユーザーによるフォーカス操作を最優先で処理
-    if (focusedGpxData) {
-      if (focusedGpxData.points && focusedGpxData.points.length > 0) {
-        const points = focusedGpxData.points.map(p => [p.lat, p.lng]);
-        const bounds = L.latLngBounds(points);
-        map.invalidateSize();
-        map.fitBounds(bounds, { padding: [50, 50] });
-      }
-      return; // フォーカスがある場合は、ここで処理を終了
-    }
-
-    // フォーカスが無く、表示トラックが1つの場合のみ、自動ズーム
-    if (gpxData && gpxData.length === 1) {
-      const singleTrack = gpxData[0];
-      if (singleTrack.points && singleTrack.points.length > 0) {
-        const points = singleTrack.points.map(p => [p.lat, p.lng]);
-        const bounds = L.latLngBounds(points);
-        map.invalidateSize();
-        map.fitBounds(bounds, { padding: [50, 50] });
-      }
-    }
-  }, [gpxData, focusedGpxData, map]);
-
-  return null;
-};
-
-// --- TouchHelperInitializer: Leaflet Touch Helperを初期化するコンポーネント ---
-const TouchHelperInitializer = () => {
-  const map = useMap();
-  useEffect(() => {
-    if (L.TouchHelper) {
-      L.TouchHelper.addTo(map);
-    }
-  }, [map]);
-  return null;
-};
-
-
-const Map = ({ gpxData, focusedGpxData, hoveredPoint, onBoundsChange, onTrackClick, settingsChanged }) => {
-  // 初期表示位置を東京駅に設定
+const Map = ({ hoveredPoint, onBoundsChange, settingsChanged }) => {
+  const { visibleGpxTracks, focusedGpxData, setFocusedGpxId } = useGpxContext();
   const position = [35.681236, 139.767125];
-  const gpxList = gpxData || [];
+  const gpxList = visibleGpxTracks || [];
 
   const mapRef = useRef();
   const [selectedTile, setSelectedTile] = useState(() => {
@@ -87,7 +36,7 @@ const Map = ({ gpxData, focusedGpxData, hoveredPoint, onBoundsChange, onTrackCli
       if (mapRef.current) {
         mapRef.current.invalidateSize();
       }
-    }, 100); // 100ms後に実行
+    }, 100);
 
     return () => clearTimeout(timer);
   }, []);
@@ -146,7 +95,7 @@ const Map = ({ gpxData, focusedGpxData, hoveredPoint, onBoundsChange, onTrackCli
             color={gpx.color || 'blue'}
             weight={isFocused ? 5 : 3}
             eventHandlers={{
-              click: () => onTrackClick(gpx.id),
+              click: () => setFocusedGpxId(gpx.id),
             }}
           />
         );
@@ -155,7 +104,7 @@ const Map = ({ gpxData, focusedGpxData, hoveredPoint, onBoundsChange, onTrackCli
       {hoveredPoint && <Marker position={[hoveredPoint.lat, hoveredPoint.lng]} />}
       
       <MapEvents onBoundsChange={onBoundsChange} onBaseLayerChange={handleBaseLayerChange} />
-      <MapController gpxData={gpxData} focusedGpxData={focusedGpxData} />
+      <MapController />
       <StartEndMarkers gpxData={gpxList} settingsChanged={settingsChanged} />
       <TouchHelperInitializer />
 

@@ -1,0 +1,50 @@
+.elevation-graph {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: #f0f0f0;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.chart-container {
+    position: relative;
+    flex-grow: 1;
+}
+
+.graph-mode-toggle-btn {
+    position: absolute;
+    top: 5px;
+    left: 50px;
+    z-index: 10;
+    padding: 4px 8px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.graph-mode-toggle-btn:hover {
+    background-color: #f0f0f0;
+}
+
+.merge-mode-checkbox {
+    position: absolute;
+    top: 5px;
+    z-index: 10;
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.total-gain-display {
+    position: absolute;
+    top: 5px;
+    left: 200px;
+    z-index: 10;
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}

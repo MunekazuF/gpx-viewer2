@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const useUI = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -7,6 +7,8 @@ const useUI = () => {
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isFilterModalOpen, setFilterModalOpen] = useState(false);
   const [mobileView, setMobileView] = useState('map'); // 'map' or 'graph'
+  const [graphSizeMode, setGraphSizeMode] = useState('normal');
+  const [isSettingsModalOpen, setSettingsModalOpen] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -32,6 +34,38 @@ const useUI = () => {
     setFilterModalOpen(!isFilterModalOpen);
   };
 
+  const toggleGraphSizeMode = useCallback(() => {
+    setGraphSizeMode(currentMode => {
+      if (currentMode === 'normal') return 'maximized';
+      if (currentMode === 'maximized') return 'minimized';
+      return 'normal';
+    });
+  }, []);
+
+  const toggleSettingsModal = () => {
+    setSettingsModalOpen(!isSettingsModalOpen);
+  };
+
+  const getGraphAreaStyle = () => {
+    if (isMobile || graphSizeMode === 'normal') return {};
+    if (graphSizeMode === 'maximized') return { flexGrow: 1, height: '100%', minHeight: '0' };
+    if (graphSizeMode === 'minimized') return { flexGrow: 0, height: '0', minHeight: '0', overflow: 'hidden' };
+    return {};
+  };
+
+  const getMapAreaStyle = () => {
+    if (isMobile || graphSizeMode === 'normal') return {};
+    if (graphSizeMode === 'maximized') return { flexGrow: 0, height: '0', minHeight: '0', overflow: 'hidden' };
+    if (graphSizeMode === 'minimized') return { flexGrow: 1, height: '100%', minHeight: '0' };
+    return {};
+  };
+  
+  const getGraphButtonIcon = () => {
+    if (graphSizeMode === 'normal') return '↗';
+    if (graphSizeMode === 'maximized') return '↙';
+    return '↔';
+  };
+
   return { 
     isMobile, 
     isTablet,
@@ -43,6 +77,13 @@ const useUI = () => {
     toggleFilterModal, 
     mobileView, 
     setMobileView,
+    graphSizeMode,
+    toggleGraphSizeMode,
+    isSettingsModalOpen,
+    toggleSettingsModal,
+    getGraphAreaStyle,
+    getMapAreaStyle,
+    getGraphButtonIcon
   };
 };
 
