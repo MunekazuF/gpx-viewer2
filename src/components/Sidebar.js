@@ -19,9 +19,14 @@ const Sidebar = ({ onToggleFilterModal, onOpenSettings, onCollapse, onOpenEditMo
     focusedGpxId,
     resetSelection,
     deleteSelectedGpx,
+    checkAllGpxTracks,
   } = useGpxContext();
 
   const [isDragging, setIsDragging] = useState(false);
+
+  const handleCheckAll = () => {
+    checkAllGpxTracks();
+  };
 
   /**
    * ファイル入力が変更されたときのハンドラー
@@ -150,12 +155,8 @@ const Sidebar = ({ onToggleFilterModal, onOpenSettings, onCollapse, onOpenEditMo
         <button onClick={resetSelection} className="reset-button">
           リセット
         </button>
-        <button onClick={() => {
-          if (window.confirm('選択したファイルを削除しますか？')) {
-            deleteSelectedGpx();
-          }
-        }} className="delete-button">
-          削除
+        <button onClick={handleCheckAll} className="check-all-button">
+          全てチェック
         </button>
         <div className="version-info" onClick={onOpenSettings}>
           Version: {process.env.REACT_APP_VERSION}

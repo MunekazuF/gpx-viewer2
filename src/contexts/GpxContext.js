@@ -180,15 +180,51 @@ export const GpxProvider = ({ children }) => {
   }, []);
 
   /**
+   * 全てのGPXトラックの表示状態をONにします。
+   * 20件を超える場合は確認ダイアログを表示します。
+   */
+  const checkAllGpxTracks = async () => {
+    const tracksToLoad = [];
+    const updatedTracks = gpxTracks.map(track => {
+      if (!track.isVisible) {
+        tracksToLoad.push(track);
+      }
+      return { ...track, isVisible: true };
+    });
+
+    if (tracksToLoad.length > 20) {
+      if (!window.confirm(`20件を超えるGPXトラック（${tracksToLoad.length}件）を全て表示しますか？`)) {
+        return; // ユーザーがキャンセルしたら何もしない
+      }
+    }
+
+    // 必要なトラックの完全なデータをロード
+    const loadedTracksData = await Promise.all(
+      tracksToLoad.map(t => getGpxDataById(t.id))
+    );
+
+    setGpxTracks(currentTracks => {
+      const finalTracks = [...currentTracks];
+      loadedTracksData.forEach(loadedTrack => {
+        const index = finalTracks.findIndex(t => t.id === loadedTrack.id);
+        if (index !== -1) {
+          finalTracks[index] = { ...loadedTrack, isVisible: true };
+        }
+      });
+      return finalTracks;
+    });
+  };
+
+  /**
    * 現在表示されている（選択されている）GPXトラックを削除します。
    */
-  const deleteSelectedGpx = async () => {
-    const selectedIds = gpxTracks.filter(track => track.isVisible).map(track => track.id);
-    if (selectedIds.length === 0) return;
+  const deleteSelectedGpx = async (idsToDelete) => {
+    const ids = idsToDelete || gpxTracks.filter(track => track.isVisible).map(track => track.id);
+    if (ids.length === 0) return;
 
-    await deleteGpxDataByIds(selectedIds);
-    setGpxTracks(prev => prev.filter(track => !selectedIds.includes(track.id)));
-    if (selectedIds.includes(focusedGpxId)) {
+    await deleteGpxDataByIds(ids);
+    setGpxTracks(prev => prev.filter(track => !ids.includes(track.id)));
+    if (ids.includes(focusedGpxId)) {
         setInfoOverlayVisible(false);
         _setFocusedGpxId(null);
         setFocusedGpxData(null);
@@ -296,6 +332,7 @@ export const GpxProvider = ({ children }) => {
     resetSelection,
     deleteSelectedGpx,
     updateGpxTrack,
+    checkAllGpxTracks,
   };
 
   return <GpxContext.Provider value={value}>{children}</GpxContext.Provider>;

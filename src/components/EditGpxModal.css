@@ -80,10 +80,19 @@
 }
 
 .modal-actions button:nth-child(3) { /* キャンセルボタン */
-  background-color: #dc3545;
+  background-color: #6c757d;
   color: white;
 }
 
 .modal-actions button:nth-child(3):hover {
+  background-color: #5a6268;
+}
+
+.modal-actions .delete-button {
+  background-color: #dc3545;
+  color: white;
+}
+
+.modal-actions .delete-button:hover {
   background-color: #c82333;
 }

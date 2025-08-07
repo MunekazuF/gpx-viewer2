@@ -15,7 +15,7 @@
   align-items: center; /* ボタンを中央揃えに */
 }
 
-.file-upload-label, .filter-button, .reset-button, .delete-button {
+.file-upload-label, .filter-button, .reset-button, .delete-button, .check-all-button {
   flex: 1; /* 幅を均等に分ける */
   display: block;
   padding: 5px 10px; /* 上下パディングを13pxに */
@@ -29,7 +29,7 @@
   font-size: 10px;
 }
 
-.file-upload-label:hover, .filter-button:hover, .collapse-button:hover {
+.file-upload-label:hover, .filter-button:hover, .collapse-button:hover, .check-all-button:hover {
   background-color: #0056b3;
 }
 

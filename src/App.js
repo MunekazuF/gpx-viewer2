@@ -34,7 +34,7 @@ function App() {
   // 地図関連のカスタムフック
   const { mapBounds, onBoundsChange } = useMap();
   // GPXコンテキストから情報を取得
-  const { isInfoOverlayVisible, gpxTracks, updateGpxTrack } = useGpxContext();
+  const { isInfoOverlayVisible, gpxTracks, updateGpxTrack, deleteSelectedGpx } = useGpxContext();
   // 設定変更を子コンポーネントに通知するための状態
   const [settingsChanged, setSettingsChanged] = useState(false);
   const mapRef = useRef(null);
@@ -67,6 +67,18 @@ function App() {
    */
   const handleSaveGpxInfo = (id, updatedData) => {
     updateGpxTrack(id, updatedData);
+  };
+
+  /**
+   * GPXファイルを削除するハンドラー
+   * @param {string} id - 削除するGPXトラックID
+   */
+  const handleDeleteGpx = (id) => {
+    if (window.confirm('このGPXファイルを削除しますか？')) {
+      // deleteSelectedGpxは配列を受け取るので、単一のIDを配列にして渡す
+      deleteSelectedGpx([id]);
+      handleCloseEditModal(); // 削除後、モーダルを閉じる
+    }
   };
 
   /**
@@ -194,6 +206,7 @@ function App() {
           onClose={handleCloseEditModal}
           gpxData={gpxTracks.find(track => track.id === editingGpxId)}
           onSave={handleSaveGpxInfo}
+          onDelete={() => handleDeleteGpx(editingGpxId)}
         />
       )}
 

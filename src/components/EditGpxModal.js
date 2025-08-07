@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { hslToHex, hexToHsl } from '../utils/colorConverter';
 import './EditGpxModal.css';
 
-const EditGpxModal = ({ isOpen, onClose, gpxData, onSave }) => {
+const EditGpxModal = ({ isOpen, onClose, gpxData, onSave, onDelete }) => {
   const [fileName, setFileName] = useState('');
   const [trackColor, setTrackColor] = useState('#000000');
 
@@ -56,6 +56,7 @@ const EditGpxModal = ({ isOpen, onClose, gpxData, onSave }) => {
           <button onClick={handleSave}>保存</button>
           <button onClick={handleReset}>リセット</button>
           <button onClick={onClose}>キャンセル</button>
+          <button onClick={onDelete} className="delete-button">削除</button>
         </div>
       </div>
     </div>
