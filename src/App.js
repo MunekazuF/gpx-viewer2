@@ -126,6 +126,28 @@ function App() {
     }
   }, [isSidebarCollapsed, isMobile, isTablet]);
 
+  // グラフの表示状態の変更に応じて地図のサイズを更新
+  useEffect(() => {
+    if (mapRef.current) {
+      // アニメーションやレンダリングの時間を考慮して少し遅延させる
+      setTimeout(() => {
+        mapRef.current.invalidateSize();
+      }, 300); 
+    }
+  }, [graphSizeMode]);
+
+  // ウィンドウリサイズ時に地図のサイズを更新
+  useEffect(() => {
+    const handleResize = () => {
+      if (mapRef.current) {
+        mapRef.current.invalidateSize();
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const sidebarClasses = `${isMobile ? 'sidebar-mobile' : 'split'} ${isMobile && isSidebarOpen ? 'open' : ''}`;
 
   return (

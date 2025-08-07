@@ -28,12 +28,11 @@ L.Icon.Default.mergeOptions({
  * @param {function} props.onBoundsChange - 地図の表示範囲が変更されたときのコールバック
  * @param {boolean} props.settingsChanged - 設定が変更されたかどうか
  */
-const Map = ({ hoveredPoint, onBoundsChange, settingsChanged }) => {
+const Map = ({ hoveredPoint, onBoundsChange, settingsChanged, mapRef }) => {
   const { visibleGpxTracks, focusedGpxData, setFocusedGpxId } = useGpxContext();
   const position = [35.681236, 139.767125]; // 初期表示位置（東京駅）
   const gpxList = visibleGpxTracks || [];
 
-  const mapLocalRef = useRef();
   const [selectedTile, setSelectedTile] = useState(() => {
     return getCookie('mapTile') || 'OpenStreetMap';
   });
@@ -41,13 +40,13 @@ const Map = ({ hoveredPoint, onBoundsChange, settingsChanged }) => {
   // コンポーネントのマウント時に地図のサイズを再描画
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (mapLocalRef.current) {
-        mapLocalRef.current.invalidateSize();
+      if (mapRef.current) {
+        mapRef.current.invalidateSize();
       }
     }, 100);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [mapRef]);
 
   
 
@@ -67,7 +66,7 @@ const Map = ({ hoveredPoint, onBoundsChange, settingsChanged }) => {
   };
 
   return (
-    <MapContainer center={position} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={false} ref={mapLocalRef}>
+    <MapContainer center={position} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={false} ref={mapRef}>
       <ScaleControl position="bottomleft" />
       
       <LayersControl position="bottomright" onBaseLayerChange={handleBaseLayerChange}>
