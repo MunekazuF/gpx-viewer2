@@ -10,7 +10,7 @@ export const parseGpx = (gpxText) => {
   const parser = new DOMParser();
   const xmlDoc = parser.parseFromString(gpxText, "text/xml");
 
-  const name = xmlDoc.getElementsByTagName("name")[0]?.textContent || "無題のトラック";
+  const originalName = xmlDoc.getElementsByTagName("name")[0]?.textContent || "無題のトラック";
   const timeStr = xmlDoc.getElementsByTagName("time")[0]?.textContent;
   const time = timeStr ? new Date(timeStr) : null;
 
@@ -48,5 +48,5 @@ export const parseGpx = (gpxText) => {
   const startPoint = finalPoints.length > 0 ? { lat: finalPoints[0].lat, lng: finalPoints[0].lng } : null;
   const endPoint = finalPoints.length > 0 ? { lat: finalPoints[finalPoints.length - 1].lat, lng: finalPoints[finalPoints.length - 1].lng } : null;
 
-  return { name, time, points: finalPoints, startPoint, endPoint };
+  return { name: originalName, originalName, time, points: finalPoints, startPoint, endPoint };
 };

@@ -76,6 +76,23 @@
   margin-right: 8px; /* チェックボックスとファイル名の間隔 */
 }
 
+.file-item .file-name {
+  flex-grow: 1; /* ファイル名が残りのスペースを占めるように */
+}
+
+.kebab-menu-button {
+  background: none;
+  border: none;
+  font-size: 1.2em;
+  cursor: pointer;
+  padding: 0 5px;
+  color: #666;
+}
+
+.kebab-menu-button:hover {
+  color: #333;
+}
+
 .sidebar-container.dragging {
   border: 2px dashed #007bff;
 }

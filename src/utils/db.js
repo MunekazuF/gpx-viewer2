@@ -63,6 +63,24 @@ export const deleteGpxDataByIds = async (ids) => {
 };
 
 /**
+ * 指定したIDのGPXデータを更新する
+ * @param {string} id - 更新するGPXデータのID
+ * @param {object} updates - 更新するプロパティと値のオブジェクト (例: { name: "新しい名前", color: "#FF0000" })
+ */
+export const updateGpxData = async (id, updates) => {
+  const db = await initDB();
+  const tx = db.transaction(STORE_NAME, 'readwrite');
+  const store = tx.store;
+  const gpxData = await store.get(id);
+
+  if (gpxData) {
+    const updatedGpxData = { ...gpxData, ...updates };
+    await store.put(updatedGpxData);
+  }
+  await tx.done;
+};
+
+/**
  * IndexedDBのすべてのGPXデータを削除する
  */
 export const clearAllGpxData = async () => {

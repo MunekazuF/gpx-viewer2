@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { parseGpx } from '../utils/gpxParser';
-import { saveGpxData, getAllGpxMetadata, getGpxDataById, deleteGpxDataByIds } from '../utils/db';
+import { saveGpxData, getAllGpxMetadata, getGpxDataById, deleteGpxDataByIds, updateGpxData } from '../utils/db';
 import { filterGpxFiles } from '../utils/gpxFilter';
 
 /**
@@ -44,18 +44,36 @@ export const GpxProvider = ({ children }) => {
   useEffect(() => {
     const loadMetadata = async () => {
       const metadata = await getAllGpxMetadata();
-      const sortedTracks = metadata.map(meta => ({
-        ...meta,
-        isVisible: false,
-        points: null,
-        color: meta.color || generateColor() // DBに色がなければ生成
-      })).sort((a, b) => {
+      const tracksToUpdateInDb = [];
+      const processedMetadata = metadata.map(meta => {
+        let currentOriginalName = meta.originalName || meta.name;
+
+        // Prepare updates for IndexedDB if properties were missing
+        if (!meta.originalName) {
+          tracksToUpdateInDb.push({ id: meta.id, originalName: currentOriginalName });
+        }
+
+        return {
+          ...meta, // Start with original meta to preserve other properties
+          originalName: currentOriginalName,
+          isVisible: false,
+          points: null,
+          color: meta.color || generateColor() // DBに色がなければ生成
+        };
+      });
+
+      const sortedTracks = processedMetadata.sort((a, b) => {
         if (!a.time && !b.time) return 0;
         if (!a.time) return 1;
         if (!b.time) return -1;
         return b.time.getTime() - a.time.getTime(); // 日付の降順でソート
       });
       setGpxTracks(sortedTracks);
+
+      // Persist changes to IndexedDB
+      for (const trackUpdate of tracksToUpdateInDb) {
+        await updateGpxData(trackUpdate.id, trackUpdate); // originalNameを更新
+      }
     };
     loadMetadata();
   }, []);
@@ -178,6 +196,22 @@ export const GpxProvider = ({ children }) => {
   };
 
   /**
+   * 指定されたIDのGPXトラックの情報を更新します。
+   * @param {string} id - 更新するGPXトラックのID
+   * @param {object} updates - 更新するプロパティと値のオブジェクト
+   */
+  const updateGpxTrack = async (id, updates) => {
+    await updateGpxData(id, updates);
+    setGpxTracks(prev => prev.map(track => 
+      track.id === id ? { ...track, ...updates } : track
+    ));
+    // フォーカスされているトラックが更新された場合、focusedGpxDataも更新
+    if (focusedGpxId === id) {
+      setFocusedGpxData(prev => ({ ...prev, ...updates }));
+    }
+  };
+
+  /**
    * フィルター条件を適用し、GPXトラックの表示状態を更新します。
    * @param {object} filters - 適用するフィルター条件
    */
@@ -261,6 +295,7 @@ export const GpxProvider = ({ children }) => {
     setFilter: applyFilter,
     resetSelection,
     deleteSelectedGpx,
+    updateGpxTrack,
   };
 
   return <GpxContext.Provider value={value}>{children}</GpxContext.Provider>;

@@ -120,7 +120,7 @@ const Map = ({ hoveredPoint, onBoundsChange, settingsChanged, mapRef }) => {
         const isFocused = focusedGpxData && gpx.id === focusedGpxData.id;
         return (
           <Polyline
-            key={`${gpx.id}-${isFocused}`}
+            key={`${gpx.id}-${isFocused}-${gpx.color}`}
             positions={gpx.points.map(p => [p.lat, p.lng])}
             color={gpx.color || 'blue'}
             weight={isFocused ? 5 : 3}

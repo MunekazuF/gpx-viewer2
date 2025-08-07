@@ -6,6 +6,7 @@ import Map from './components/Map';
 import GpxInfoOverlay from './components/GpxInfoOverlay';
 import FilterModal from './components/FilterModal';
 import SettingsModal from './components/SettingsModal';
+import EditGpxModal from './components/EditGpxModal';
 import useUI from './hooks/useUI';
 import { useGpxContext } from './contexts/GpxContext';
 import useMap from './hooks/useMap';
@@ -18,6 +19,8 @@ import './App.css';
 function App() {
   // 標高グラフ上でホバーされたポイントの状態
   const [hoveredPoint, setHoveredPoint] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingGpxId, setEditingGpxId] = useState(null);
   // UI関連のカスタムフック
   const { 
     isMobile, isTablet, isSidebarOpen, toggleSidebar, 
@@ -31,7 +34,7 @@ function App() {
   // 地図関連のカスタムフック
   const { mapBounds, onBoundsChange } = useMap();
   // GPXコンテキストから情報を取得
-  const { isInfoOverlayVisible } = useGpxContext();
+  const { isInfoOverlayVisible, gpxTracks, updateGpxTrack } = useGpxContext();
   // 設定変更を子コンポーネントに通知するための状態
   const [settingsChanged, setSettingsChanged] = useState(false);
   const mapRef = useRef(null);
@@ -39,6 +42,32 @@ function App() {
   // Split.jsのインスタンスを保持するためのref
   const horizontalSplitRef = useRef(null);
   const verticalSplitRef = useRef(null);
+
+  /**
+   * 編集モーダルを開くハンドラー
+   * @param {string} gpxId - 編集対象のGPXトラックID
+   */
+  const handleOpenEditModal = (gpxId) => {
+    setEditingGpxId(gpxId);
+    setIsEditModalOpen(true);
+  };
+
+  /**
+   * 編集モーダルを閉じるハンドラー
+   */
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingGpxId(null);
+  };
+
+  /**
+   * GPX情報の保存ハンドラー
+   * @param {string} id - GPXトラックID
+   * @param {object} updatedData - 更新されたデータ
+   */
+  const handleSaveGpxInfo = (id, updatedData) => {
+    updateGpxTrack(id, updatedData);
+  };
 
   /**
    * 設定モーダルを閉じるハンドラー
@@ -159,6 +188,14 @@ function App() {
       {isSettingsModalOpen && (
         <SettingsModal isOpen={isSettingsModalOpen} onClose={handleCloseSettingsModal} />
       )}
+      {isEditModalOpen && (
+        <EditGpxModal
+          isOpen={isEditModalOpen}
+          onClose={handleCloseEditModal}
+          gpxData={gpxTracks.find(track => track.id === editingGpxId)}
+          onSave={handleSaveGpxInfo}
+        />
+      )}
 
       {/* モバイル用のUI要素 */}
       {isMobile && (
@@ -175,7 +212,7 @@ function App() {
 
       {/* サイドバー */}
       <div id="sidebar" className={sidebarClasses}>
-        <Sidebar onToggleFilterModal={toggleFilterModal} mapBounds={mapBounds} onOpenSettings={toggleSettingsModal} onCollapse={toggleSidebarCollapse} />
+        <Sidebar onToggleFilterModal={toggleFilterModal} mapBounds={mapBounds} onOpenSettings={toggleSettingsModal} onCollapse={toggleSidebarCollapse} onOpenEditModal={handleOpenEditModal} />
       </div>
       {!isMobile && <div className="gutter gutter-horizontal"></div>}
       

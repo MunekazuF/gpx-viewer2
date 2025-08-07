@@ -10,7 +10,7 @@ import './Sidebar.css';
  * @param {function} props.onOpenSettings - 設定モーダル表示用の関数
  * @param {function} props.onCollapse - サイドバーを折りたたむための関数
  */
-const Sidebar = ({ onToggleFilterModal, onOpenSettings, onCollapse }) => {
+const Sidebar = ({ onToggleFilterModal, onOpenSettings, onCollapse, onOpenEditModal }) => {
   const {
     gpxTracks,
     addGpxFiles,
@@ -137,6 +137,12 @@ const Sidebar = ({ onToggleFilterModal, onOpenSettings, onCollapse }) => {
             <span className="file-name">
               {formatDate(data.time)} {data.name}
             </span>
+            <button className="kebab-menu-button" onClick={(e) => {
+              e.stopPropagation();
+              onOpenEditModal(data.id);
+            }}>
+              &#x22EE;
+            </button>
           </div>
         ))}
       </div>
