@@ -34,6 +34,7 @@ function App() {
   const { isInfoOverlayVisible } = useGpxContext();
   // 設定変更を子コンポーネントに通知するための状態
   const [settingsChanged, setSettingsChanged] = useState(false);
+  const mapRef = useRef(null);
 
   // Split.jsのインスタンスを保持するためのref
   const horizontalSplitRef = useRef(null);
@@ -117,6 +118,11 @@ function App() {
     if (!isMobile && horizontalSplitRef.current) {
       const sidebarSize = isTablet ? 30 : 15;
       horizontalSplitRef.current.setSizes(isSidebarCollapsed ? [0, 100] : [sidebarSize, 100 - sidebarSize]);
+      if (mapRef.current) {
+        setTimeout(() => {
+          mapRef.current.invalidateSize();
+        }, 300); // Split.jsのアニメーションが完了するのを待つ
+      }
     }
   }, [isSidebarCollapsed, isMobile, isTablet]);
 
@@ -169,7 +175,7 @@ function App() {
             </div>
             {mobileView === 'map' && (
               <div id="map-area" className="map-area-mobile">
-                <Map hoveredPoint={hoveredPoint} onBoundsChange={onBoundsChange} settingsChanged={settingsChanged} />
+                <Map hoveredPoint={hoveredPoint} onBoundsChange={onBoundsChange} settingsChanged={settingsChanged} mapRef={mapRef} />
               </div>
             )}
             {mobileView === 'graph' && (
@@ -181,7 +187,7 @@ function App() {
         ) : (
           <>
             <div id="map-area" className="split-vertical" style={getMapAreaStyle()}>
-              <Map hoveredPoint={hoveredPoint} onBoundsChange={onBoundsChange} settingsChanged={settingsChanged} />
+              <Map hoveredPoint={hoveredPoint} onBoundsChange={onBoundsChange} settingsChanged={settingsChanged} mapRef={mapRef} />
             </div>
             <div id="graph-area" className="split-vertical" style={getGraphAreaStyle()}>
               <ElevationGraph onPointHover={setHoveredPoint} key={graphSizeMode} />

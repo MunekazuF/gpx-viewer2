@@ -33,21 +33,28 @@ const Map = ({ hoveredPoint, onBoundsChange, settingsChanged }) => {
   const position = [35.681236, 139.767125]; // 初期表示位置（東京駅）
   const gpxList = visibleGpxTracks || [];
 
-  const mapRef = useRef();
+  const mapLocalRef = useRef();
   const [selectedTile, setSelectedTile] = useState(() => {
     return getCookie('mapTile') || 'OpenStreetMap';
   });
 
-  // コンポーネントのマウントとアンマウント時に地図のサイズを再描画
+  // コンポーネントのマウント時に地図のサイズを再描画
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (mapRef.current) {
-        mapRef.current.invalidateSize();
+      if (mapLocalRef.current) {
+        mapLocalRef.current.invalidateSize();
       }
     }, 100);
 
     return () => clearTimeout(timer);
   }, []);
+
+  
+
+  
+
+  
+
 
   /**
    * ベースレイヤー（タイル）が変更されたときのハンドラー
@@ -60,7 +67,7 @@ const Map = ({ hoveredPoint, onBoundsChange, settingsChanged }) => {
   };
 
   return (
-    <MapContainer center={position} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={false} ref={mapRef}>
+    <MapContainer center={position} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={false} ref={mapLocalRef}>
       <ScaleControl position="bottomleft" />
       
       <LayersControl position="bottomright" onBaseLayerChange={handleBaseLayerChange}>
@@ -79,6 +86,18 @@ const Map = ({ hoveredPoint, onBoundsChange, settingsChanged }) => {
         <LayersControl.BaseLayer checked={selectedTile === '国土地理院'} name="国土地理院">
           <TileLayer
             url="https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>'
+          />
+        </LayersControl.BaseLayer>
+        <LayersControl.BaseLayer checked={selectedTile === '地理院淡色地図'} name="地理院淡色地図">
+          <TileLayer
+            url="https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>'
+          />
+        </LayersControl.BaseLayer>
+        <LayersControl.BaseLayer checked={selectedTile === '地理院白地図'} name="地理院白地図">
+          <TileLayer
+            url="https://cyberjapandata.gsi.go.jp/xyz/blank/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>'
           />
         </LayersControl.BaseLayer>
